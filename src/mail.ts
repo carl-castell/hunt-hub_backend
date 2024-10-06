@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 // Function to send an email
 export const sendMail = async (to: string, subject: string, text: string) => {
   const mailOptions = {
-    from: '"Ferdinand Castell" <ferdinand@castell.de>', // Sender address
+    from: '"Max Mustermann" <max@mustermann.de>', // Sender address
     to, // Recipient address
     subject, // Subject line
     text

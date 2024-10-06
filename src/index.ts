@@ -14,6 +14,10 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Express + TypeScript Server");
 });
 
+app.get('/api/test', (res: Response) => {
+  '<h1>In Construction</h1>'
+})
+
 // app.get('/send-email', (req, res) => {
 //   sendMail(
 //     'carlcastell4@gmail.com',
@@ -26,9 +30,9 @@ app.get("/", (req: Request, res: Response) => {
 app.get('/send-email', async (req, res) => {
   try {
     await sendMail(
-      'joe.castell.castell@gmail.com',
-      'Gruß an mein Kleines Sönchen',
-      'Hallo Lieber Johannes, wie geht es dir?'
+      'max@mustermann.de',
+      'message to max',
+      'hallo'
     );
     res.send('Email sent successfully!');
   } catch (error) {
