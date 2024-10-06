@@ -14,9 +14,9 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Express + TypeScript Server");
 });
 
-app.get('/api/test', (res: Response) => {
-  '<h1>In Construction</h1>'
-})
+app.get('/api/test', (req: Request, res: Response) => {
+  res.send("<h1>In Construction...</h1>")
+});
 
 // app.get('/send-email', (req, res) => {
 //   sendMail(
