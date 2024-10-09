@@ -1,66 +1,84 @@
-
 import nodemailer from 'nodemailer';
-//import mg from 'nodemailer-mailgun-transport';
 import 'dotenv/config';
+import path from 'path';
+import ejs from 'ejs';
 
-//smtp method
+// Render template
+const templatePath = path.join(__dirname, 'mail-views', 'isams.ejs');
 
-// Create a transporter using SMTP
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST, // SMTP server host
-  port: Number(process.env.SMTP_PORT), // SMTP server port
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER, // SMTP username
-    pass: process.env.SMTP_PASS, // SMTP password
-  },
-});
+// current time
+const getCurrentTime = (): string => {
+  const currentDate = new Date();
+  const hours = currentDate.getHours().toString().padStart(2, '0');
+  const minutes = currentDate.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
 
-// Function to send an email
-export const sendMail = async (to: string, subject: string, text: string) => {
-  const mailOptions = {
-    from: '"Max Mustermann" <max@mustermann.de>', // Sender address
-    to, // Recipient address
-    subject, // Subject line
-    text
+// current year
+const getCurrentYear = (): number => {
+  const currentDate = new Date();
+  return currentDate.getFullYear();
+};
 
-  };
+// current year in 2 digits
+const getCurrentYearTwoDigits = (): string => {
+  const currentDate = new Date();
+  return currentDate.getFullYear().toString().slice(-2);
+};
 
+// current month
+const getCurrentMonth = (): string => {
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const currentDate = new Date();
+  return monthNames[currentDate.getMonth()];
+};
+
+// get day
+const getCurrentDayOfMonth = (): number => {
+  const currentDate = new Date();
+  return currentDate.getDate();
+};
+
+const data = {
+  email: '', //recipient email address
+  name: '', //recipient name
+  message: '', //detention message
+  time: getCurrentTime(),
+  date: {
+    day:getCurrentDayOfMonth(),
+    month:getCurrentMonth(),
+    year: getCurrentYear(),
+    year_two_digits: getCurrentYearTwoDigits(),
+  }
+
+};
+
+// Function to render HTML and send email
+export const sendMail = async () => {
   try {
+    const renderedHtml = await ejs.renderFile(templatePath, data);
+
+    // Create a transporter using SMTP
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST, // SMTP server host
+      port: Number(process.env.SMTP_PORT), // SMTP server port
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER, // SMTP username
+        pass: process.env.SMTP_PASS, // SMTP password
+      },
+    });
+
+    const mailOptions = {
+      from: '"iSAMS Notification" <isams-noreply@ampleforth.org.uk>', // Sender address
+      to: data.email, // Recipient address
+      subject: `iSAMS Notification - ${data.name}`, // Subject line
+      html: renderedHtml, // Rendered HTML
+    };
+
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent:', info.response);
   } catch (error) {
     console.error('Error sending email:', error);
   }
 };
-
-
-// api method
-// const auth = {
-//   auth: {
-//     apiKey: process.env.MAILGUN_API_KEY || '',
-//     domain: process.env.MAILGUN_DOMAIN || '',
-//   },
-// };
-
-// const nodemailerMailgun = nodemailer.createTransport(mg(auth));
-
-// export const sendMail = (to: string, subject: string, html: string, text: string) => {
-//   const mailOptions = {
-//     from: 'no-reply@hunt-hub.de',
-//     to,
-//     //bcc: 'secretagent@company.gov',
-//     subject,
-//     //replyTo: 'reply2this@company.com',
-//     html,
-//     text,
-//   };
-
-//   nodemailerMailgun.sendMail(mailOptions, (err, info) => {
-//     if (err) {
-//       console.error(`Error: ${err}`);
-//     } else {
-//       console.log(`Response: ${info}`);
-//     }
-//   });
-// };

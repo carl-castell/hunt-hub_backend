@@ -1,0 +1,67 @@
+
+
+<html>
+    <head>
+
+    </head>
+    <body>
+ 
+        <table align="center" cellpadding="0" cellspacing="0" style="background-color: rgb(242,242,242);" width="100%">
+	    <tbody>
+		<tr>
+			<td>
+			<table align="center" border="0" cellpadding="15" cellspacing="0" class="template_table" style="background-color: rgb(242,242,242);border: 1.0px solid rgb(221,221,221);width: 570.0px;">
+				<tbody>
+					<tr>
+						<td class="template_header" style="text-align: left;background-color: rgb(0,39,70);">
+						<div style="color: rgb(255,255,255);font-size: 18.0px;font-weight: 700;line-height: normal;">iSAMS Notification - <%= name %> has been put into detention.</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="template_content" style="text-align: left;background-color: rgb(255,255,255);">
+						<div style="color: rgb(0,0,0);font-size: 12.0px;font-weight: 400;line-height: 18.0px;">Dear <%= name %>,<br/>
+						<br/>
+						This is an automated notification to inform you that you have been put into detention on <%= date.day %>-<%= date.month %>-<%= date.year %> at <%= time %> for <%= message %><br/>
+						<br/>
+						Kind regards,<br/>
+						<br/>
+						Ampleforth College</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="template_content_footer" style="text-align: left;padding-top: 0.0px;background-color: rgb(255,255,255);">
+						<div style="font-size: 11.0px;color: rgb(153,153,153);font-weight: 400;line-height: 18.0px;">
+						<div class="template_content_footer_spacer" style="padding-bottom: 8.0px;">St Laurence Education Trust</div>
+						This is an automated e-mail and is sent by default from iSAMS Notifications [isams-noreply@ampleforth.org.uk].<br/>
+						If you reply to this e-mail please verify that this or any other address used by the sender is the one to which you wish to reply.</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="template_footer" style="background-color: rgb(245,245,245);">
+						<table border="0" cellpadding="0" cellspacing="0" width="100%">
+							<tbody>
+								<tr>
+									<td class="template_footer" style="text-align: left;background-color: rgb(245,245,245);">
+									<div style="color: rgb(153,153,153);font-size: 11.0px;font-weight: 400;line-height: normal;">This notification has been created by <a href="http://www.isams.co.uk/" style="text-decoration: none;color: rgb(0,39,70);" target="_blank">iSAMS</a>.</div>
+									</td>
+									<td class="template_footer" style="text-align: right;background-color: rgb(245,245,245);">
+									<div style="color: rgb(153,153,153);font-size: 11.0px;font-weight: 400;line-height: normal;">Exchange Received: <%= date.day %>-<%= date.month %>-<%= date.year_two_digits %> [<%= time %>]</div>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</td>
+		</tr>
+	    </tbody>
+        </table>
+        <font face="Verdana, Geneva, sans-serif" size="1">This message may not be disclosed to, or used by, anyone other than the addressee. If you receive this message in error please advise us immediately. Please note that the above email and attachments hereto, may be to subject to copyright protection owned by Ampleforth Abbey Trust and the use and dispersal of the same to third parties is not permitted without first obtaining approval from Ampleforth Abbey Trust.<br/>
+        Ampleforth Abbey Trust, Registered Charity No: 1026493. St Laurence Education Trust, Registered Charity No: 1063808, a Company Limited by Guarantee<br/>
+        Registered in England. Company No: 3415320. Registered Office: Ampleforth College, York, YO62 4ER<br/>
+        <a href="http://www.ampleforth.org.uk/" target="_blank">http://www.ampleforth.org.uk</a></font></div>
+      
+    </body>
+</html>
