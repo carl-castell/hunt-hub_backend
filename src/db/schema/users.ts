@@ -15,7 +15,7 @@ export const usersTable = pgTable("users", {
   password: varchar({ length: 255 }),
 });
 
-export const userRelations = relations(usersTable, ({ one }) => ({
+export const usersRelations = relations(usersTable, ({ one }) => ({
   estate: one(estatesTable, {
     fields: [usersTable.estateId],
     references: [estatesTable.id],
