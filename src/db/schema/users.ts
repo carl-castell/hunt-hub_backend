@@ -1,6 +1,7 @@
 import { integer, pgTable, pgEnum, varchar } from "drizzle-orm/pg-core";
 import { relations } from 'drizzle-orm';
 import { estatesTable } from "./estates";
+import { groupsTable } from "./groups";
 
 export const roleEnum = pgEnum('role', ['admin', 'user', 'group_leader']);
 
@@ -16,6 +17,7 @@ export const usersTable = pgTable("users", {
 });
 
 export const usersRelations = relations(usersTable, ({ one }) => ({
+  group: one(groupsTable),
   estate: one(estatesTable, {
     fields: [usersTable.estateId],
     references: [estatesTable.id],
