@@ -11,7 +11,7 @@ export const usersTable = pgTable("users", {
   estateId: integer('estate_id'),
   firstName: varchar('first_name',{ length: 255 }).notNull(),
   lastName: varchar('last_name',{ length: 255 }).notNull(),
-  email: varchar({ length: 255 }).notNull().unique(),
+  email: varchar({ length: 255 }).unique().notNull(),
   role: roleEnum().notNull(),
   password: varchar({ length: 255 }),
 });
