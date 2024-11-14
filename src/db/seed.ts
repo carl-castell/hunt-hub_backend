@@ -34,13 +34,14 @@ async function main() {
             schema.estatesTable
         ]) {
             await resetTable(db, table);
-        }    
+        }
+        console.log('> truncated all tables \n> restarted identity \n ')    
     } catch (error) {
         console.error('Error resetting tables:', error);
         process.exit(1);
     }
 
-    console.log('seeding started');
+    console.log('> seeding started');
     const startTime = Date.now(); //start recording of seeding time
 
     
@@ -54,7 +55,7 @@ async function main() {
             }
         ]).returning();
 
-        for(let index=0; index<100; index++){
+        for(let index=0; index<10; index++){
             const user = await db.insert(usersTable).values({
                 firstName: faker.person.firstName(),
                 lastName: faker.person.lastName(),
@@ -71,7 +72,7 @@ async function main() {
         const endTime = Date.now(); //stop recording of seeding time
         const duration = endTime - startTime; // calculate seeding time
 
-        console.log('\x1b[32m%s\x1b[0m',`\nSeeding finished in ${duration} ms`);
+        console.log('\n \x1b[32m%s\x1b[0m',`\n> seeding finished in ${duration} ms \n `);
         process.exit(0)
 }
 
