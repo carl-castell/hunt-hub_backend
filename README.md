@@ -1,6 +1,5 @@
 
 ```mermaid
-erDiagram
     erDiagram
 
     GUESTS {
@@ -101,7 +100,6 @@ erDiagram
         int group_id FK
     }
 
-    % Relationships
     GUESTS ||--o{ INVITATIONS : "id < guest_id"
     GUESTS ||--o{ LICENSES : "id - guest_id"
     GUESTS ||--o{ TRAINING_CERTIFICATES : "id - guest_id"
