@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 import { estatesTable } from "./estates";
 import { groupsTable } from "./groups";
 
-export const roleEnum = pgEnum('role', ['admin', 'user', 'group_leader']);
+export const roleEnum = pgEnum('role', ['admin', 'organizer', 'staff']);
 
 
 export const usersTable = pgTable("users", {

@@ -14,7 +14,6 @@ async function resetTable(db: db, table: Table) {
     );
 }
 
-
 async function main() {
 
     try{
@@ -35,12 +34,11 @@ async function main() {
         ]) {
             await resetTable(db, table);
         }
-        console.log('> truncated all tables \n> restarted identity \n ')    
+        console.log('> truncated tables \n> restarted identity \n ')    
     } catch (error) {
         console.error('Error resetting tables:', error);
         process.exit(1);
     }
-
     console.log('> seeding started');
     const startTime = Date.now(); //start recording of seeding time
 
@@ -55,24 +53,26 @@ async function main() {
             }
         ]).returning();
 
+        
+
         for(let index=0; index<10; index++){
             const user = await db.insert(usersTable).values({
                 firstName: faker.person.firstName(),
                 lastName: faker.person.lastName(),
                 email: `${index}${faker.internet.email()}`,
-                role: 'user',
+                role: faker.helpers.arrayElement(roleEnum.enumValues),
                 password: faker.internet.password({length: 12}),
                 estateId: 1
             }).returning();
 
-            process.stdout.write(`${index + 1} users inserted\r`);
+            process.stdout.write(`  ${index + 1} users inserted\r`);
         }
 
 
         const endTime = Date.now(); //stop recording of seeding time
         const duration = endTime - startTime; // calculate seeding time
 
-        console.log('\n \x1b[32m%s\x1b[0m',`\n> seeding finished in ${duration} ms \n `);
+        console.log('\n \x1b[32m%s\x1b[0m',`\n> seeding finished (${duration} ms) \n `);
         process.exit(0)
 }
 
