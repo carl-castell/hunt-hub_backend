@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { logger } from './middelwares/logger';
 import { sendMail } from "./mail";
 import { db } from "./db";
-import { json } from "stream/consumers";
+
 
 
 dotenv.config();
@@ -22,22 +22,21 @@ app.use(logger)
 
 app.get('/', async (req: Request, res: Response) => {
   try {
-    // Assuming db.query.posts.findMany is a valid method to fetch posts
     const data = await db.query.usersTable.findMany();
     res.json({
       data,
     });
   } catch (error) {
-    // Log error for debugging
     console.error('Error fetching posts:', error);
-
-    // Send a more descriptive error response
     res.status(500).json({
       error: 'An error occurred while fetching posts. Please try again later.',
     });
   }
 });
 
+app.get('/1', async (req: Request, res: Response) => {
+  res.send('hallo');
+});
 
 
 
