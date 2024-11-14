@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { logger } from './middelwares/logger';
 import { sendMail } from "./mail";
 import { db } from "./db";
+import { estatesTable, guestsTable } from "./db/schema";
 
 
 
@@ -22,9 +23,9 @@ app.use(logger)
 
 app.get('/', async (req: Request, res: Response) => {
   try {
-    const data = await db.query.usersTable.findMany();
+    const users = await db.query.usersTable.findMany();
     res.json({
-      data,
+      users,
     });
   } catch (error) {
     console.error('Error fetching posts:', error);

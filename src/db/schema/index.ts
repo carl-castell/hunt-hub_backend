@@ -1,6 +1,6 @@
 export * from './users';
 export * from './guests';
-export * from './assignment';
+export * from './assignments';
 export * from './drives';
 export * from './estates';
 export * from './events';
