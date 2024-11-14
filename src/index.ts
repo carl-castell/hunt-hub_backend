@@ -20,7 +20,7 @@ app.set('views', './mail-views')
 
 app.use(logger)
 
-app.get('/allusers', async (req: Request, res: Response) => {
+app.get('/', async (req: Request, res: Response) => {
   try {
     // Assuming db.query.posts.findMany is a valid method to fetch posts
     const data = await db.query.usersTable.findMany();
