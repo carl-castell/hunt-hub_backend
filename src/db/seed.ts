@@ -19,8 +19,10 @@ async function main() {
     try{
         
         for (const table of [
+            schema.standsDriveTable,
+            schema.standsGroupTable,
+            schema.standsGuestTable,
             schema.licensesTable,
-            schema.standAssignmentTable,
             schema.standsTable,
             schema.territorysTable,
             schema.drivesTable,
@@ -32,6 +34,7 @@ async function main() {
             schema.guestsTable,
             schema.estatesTable
         ]) {
+
             await resetTable(db, table);
         }
         console.log('> truncated tables \n> restarted identity \n ')    

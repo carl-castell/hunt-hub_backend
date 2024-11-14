@@ -1,3 +1,7 @@
+# Database
+## Setup
+
+## ERD 
 
 ```mermaid
     erDiagram
@@ -118,5 +122,5 @@
     DRIVES ||--o{ STANDSDRIVE : "id <> drive_id"
     GUESTS ||--o{ STANDSGUESTS : "id <> guest_id"
     GROUPS ||--o{ STANDSGROUPS : "id <> group_id"
-
+    
 ```
