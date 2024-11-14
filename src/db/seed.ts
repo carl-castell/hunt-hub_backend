@@ -1,15 +1,44 @@
-import { neon } from '@neondatabase/serverless';
-import { sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/neon-http';
+
 import { roleEnum, usersTable } from './schema/users';
 import { faker } from '@faker-js/faker';
 import "dotenv/config";
 import { estatesTable } from './schema/estates';
+import { db } from '.';
+import { getTableName, sql, Table } from 'drizzle-orm';
+import * as schema from '@/db/schema'
+
+
+async function resetTable(db: db, table: Table) {
+    return db.execute(
+        sql.raw(`TRUNCATE TABLE ${getTableName(table)} RESTART IDENTITY CASCADE`)
+    );
+}
 
 
 async function main() {
-    const sql = neon(process.env.DATABASE_URL!);
-    const db = drizzle(sql);
+
+    try{
+        
+        for (const table of [
+            schema.licensesTable,
+            schema.standAssignmentTable,
+            schema.standsTable,
+            schema.territorysTable,
+            schema.drivesTable,
+            schema.groupsTable,
+            schema.usersTable,
+            schema.invitationsTable,
+            schema.drivesTable,
+            schema.eventsTable,
+            schema.guestsTable,
+            schema.estatesTable
+        ]) {
+            await resetTable(db, table);
+        }    
+    } catch (error) {
+        console.error('Error resetting tables:', error);
+        process.exit(1);
+    }
 
     console.log('seeding started');
     const startTime = Date.now(); //start recording of seeding time
