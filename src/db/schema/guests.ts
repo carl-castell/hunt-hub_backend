@@ -1,6 +1,10 @@
 import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
 import { relations } from 'drizzle-orm'
 import { estatesTable } from "./estates";
+import { invitationsTable } from "./invitations";
+import { licensesTable, trainingCertificatesTable } from "./licenses";
+import { standsTable } from "./stands";
+
 
 
 export const guestsTable = pgTable("guests", {
@@ -13,9 +17,13 @@ export const guestsTable = pgTable("guests", {
 });
 
 
-export const guestsRelations = relations(guestsTable,({ one }) => ({
+export const guestsRelations = relations(guestsTable,({ one, many }) => ({
     estate: one(estatesTable, {
         fields: [guestsTable.estateId],
         references: [estatesTable.id],
-    })
-}))
+    }),
+    invitations: many(invitationsTable),
+    licenses: many(licensesTable),
+    trainingCertificates: many(trainingCertificatesTable),
+    stands: many(standsTable),
+}));

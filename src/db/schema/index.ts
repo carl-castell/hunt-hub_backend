@@ -8,4 +8,4 @@ export * from './groups';
 export * from './invitations';
 export * from './licenses';
 export * from './stands';
-export * from './terretorys';
+export * from './terretories';
