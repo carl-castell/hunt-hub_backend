@@ -52,8 +52,20 @@ async function main() {
         await events(4, estateId);
         estateId++
     }
+    
+    const groups = await readGroupsFromFile('./src/db/data/groups.json');
+        for (const group of groups) {
+            if (group.driveId == null) {
+                console.error(`Invalid driveId for group: ${group.name}`);
+                continue; // Skip this group if driveId is not valid
+            }
 
-
+            await db.insert(schema.groupsTable).values(group).returning();
+        }
+    await standsDrive(40);
+    await standsGroup(10);
+    await standsGuest(39);
+    await invitations(100)
 
         const endTime = Date.now(); //stop recording of seeding time
         const duration = endTime - startTime; // calculate seeding time
@@ -109,12 +121,13 @@ async function terretories(num: number, id: number) {
         }).returning();
 
         process.stdout.write(`  ${index + 1} territories inserted\r`);
-        await stands(100, territoryId);
+        await stands(50, territoryId);
         territoryId++
     }
 }
 //create events
 async function events(num: number, id: number) {
+    let eventId = 1
     for(let index=0; index<num; index++){
         const guest = await db.insert(schema.eventsTable).values({
             eventName: 'Drückjagd',
@@ -124,6 +137,8 @@ async function events(num: number, id: number) {
         }).returning();
 
         process.stdout.write(`  ${index + 1} events inserted\r`);
+        await drives(1, eventId);
+        eventId++
     }
 }
 //create stands
@@ -140,13 +155,87 @@ async function stands(num: number, id: number) {
         standId++
     }
 }
+//create drives
+async function drives(num: number, id: number) {
+    for(let index=0; index<num; index++){
+        const drive = await db.insert(schema.drivesTable).values({
+            eventId: id,
+            startTime: '08:30:00',
+            endTime: '12:00:00',
+        }).returning();
+
+        process.stdout.write(`  ${index + 1} drives inserted\r`);
+    }
+}
 
 
-//Function to read estates from JSON file
+//read estates from JSON file
 async function readEstatesFromFile(filePath: string): Promise<{ name: string }[]> {
     const data = await fs.readFile(filePath, 'utf8');
     return JSON.parse(data);
 }
+
+//read groups from json
+async function readGroupsFromFile(filePath: string): Promise<{ driveId: number, leaderId: number, name: string }[]> {
+    const data = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(data);
+}
+//create invitations for eventId = 1 
+async function invitations(num: number) {
+    let invitationGuestId = 1
+    for(let index=0; index<num; index++){
+        const invitation = await db.insert(schema.invitationsTable).values({
+            eventId: 1,
+            status: faker.helpers.arrayElement(schema.statusEnum.enumValues),
+            guestId: invitationGuestId,
+            rsvpDate: faker.date.future().toISOString(),
+        }).returning();
+
+        process.stdout.write(`  ${index + 1} invitations inserted\r`);
+        await drives(1, invitationGuestId);
+        invitationGuestId++
+    }
+}
+//asign stands drive
+async function standsDrive(num: number) {
+    let standDriveId = 1
+    for(let index=0; index<num; index++){
+        const stand = await db.insert(schema.standsDriveTable).values({
+            driveId: 1,
+            standId: standDriveId,
+        }).returning();
+
+        process.stdout.write(`  ${index + 1} stands asigned to drive 1\r`);
+        standDriveId++
+    }
+}
+//asign stands group
+async function standsGroup(num: number) {
+    let standGroupId = 1
+    for(let index=0; index<num; index++){
+        const stand = await db.insert(schema.standsGroupTable).values({
+            groupId: 1,
+            standId: standGroupId,
+        }).returning();
+
+        process.stdout.write(`  ${index + 1} stands asigned to group 1\r`);
+        standGroupId++
+    }
+}
+//asign stands guest
+async function standsGuest(num: number) {
+    let standGuestId = 1
+    for(let index=0; index<num; index++){
+        const stand = await db.insert(schema.standsGuestTable).values({
+            guestId: standGuestId,
+            standId: standGuestId,
+        }).returning();
+
+        process.stdout.write(`  ${index + 1} stands asigned to group 1\r`);
+        standGuestId++
+    }
+}
+
 
 main().then().catch(err=>{
     console.error(err);

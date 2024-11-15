@@ -7,9 +7,9 @@ import { standsGroupTable } from "./join_tables";
 
 export const groupsTable = pgTable( 'groups', {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    driveId: integer("drive_id"),
-    groupName: varchar("group_name", { length: 255 }),
-    leaderId: integer("leader_id").references(() => usersTable.id)
+    driveId: integer("drive_id").notNull(),
+    leaderId: integer("leader_id").references(() => usersTable.id),
+    name: varchar("group_name", { length: 255 }).notNull(),
 });
 
 
