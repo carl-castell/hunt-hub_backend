@@ -6,7 +6,7 @@ import { standsDriveTable, standsGroupTable, standsGuestTable } from "./join_tab
 export const standsTable = pgTable("stands", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     number: varchar().notNull(),
-    territoryId: integer("territorry_id"),
+    territoryId: integer("territorry_id").notNull(),
     location: point().notNull(),
 });
 

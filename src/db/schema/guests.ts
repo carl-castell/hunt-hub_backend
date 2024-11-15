@@ -4,6 +4,7 @@ import { estatesTable } from "./estates";
 import { invitationsTable } from "./invitations";
 import { licensesTable, trainingCertificatesTable } from "./licenses";
 import { standsTable } from "./stands";
+import { standsGuestTable } from "./join_tables";
 
 
 
@@ -25,5 +26,5 @@ export const guestsRelations = relations(guestsTable,({ one, many }) => ({
     invitations: many(invitationsTable),
     licenses: many(licensesTable),
     trainingCertificates: many(trainingCertificatesTable),
-    stands: many(standsTable),
+    stands: many(standsGuestTable),
 }));

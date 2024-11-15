@@ -8,8 +8,8 @@ import { guestsTable } from "./guests";
 
 export const standsDriveTable = pgTable('stands_drive', {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    standId: integer('stand_id'),
-    driveId: integer('drive_id'),
+    standId: integer('stand_id').notNull(),
+    driveId: integer('drive_id').notNull(),
 });
 export const standDriveRelatins = relations(standsDriveTable, ({ one }) => ({
     stand: one(standsTable, {
@@ -25,8 +25,8 @@ export const standDriveRelatins = relations(standsDriveTable, ({ one }) => ({
 
 export const standsGroupTable = pgTable('stands_group', {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    standId: integer('stand_id'),
-    groupId: integer('group_id'),
+    standId: integer('stand_id').notNull(),
+    groupId: integer('group_id').notNull(),
 });
 export const standsGroupRelations = relations(standsGroupTable, ({ one }) => ({
     stand: one(standsTable, {
@@ -42,8 +42,8 @@ export const standsGroupRelations = relations(standsGroupTable, ({ one }) => ({
 
 export const standsGuestTable = pgTable('stands_guest', {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    standId: integer('stand_id'),
-    guestId: integer('guest_id'),
+    standId: integer('stand_id').notNull(),
+    guestId: integer('guest_id').notNull(),
 });
 export const standGuestRelatins = relations(standsGuestTable, ({ one }) => ({
     stand: one(standsTable, {
