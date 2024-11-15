@@ -7,7 +7,7 @@ export const standsTable = pgTable("stands", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     number: varchar().notNull(),
     territoryId: integer("territorry_id").notNull(),
-    location: point().notNull(),
+    location: point(),
 });
 
 export const standsRelations = relations(standsTable, ({ many, one }) => ({
