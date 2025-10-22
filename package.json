@@ -6,6 +6,7 @@
     "build": "tsc",
     "start": "node dist/src/routes/index.js",
     "dev": "nodemon --exec tsx src/routes/index.ts",
+    "studio": "DRIZZLE_DRIVER=pg drizzle-kit studio",
     "db:gen": "drizzle-kit generate",
     "db:push": "DRIZZLE_DRIVER=pg drizzle-kit push",
     "db:push:neon": "drizzle-kit push",
