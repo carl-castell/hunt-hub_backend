@@ -1,17 +1,22 @@
-version: "3.8"
+version: "3.9"
 services:
   db:
-    container_name: database
-    image: postgres:14
-    restart: always
+    container_name: local_postgres
+    image: postgres:16
+    restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: passwort
-      POSTGRES_DB: db-name
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: appdb
     ports:
-      - "5432:5432"
+      - "5433:5432" # change to "5432:5432" if 5432 is free on your host
     volumes:
-      - db-data:/var/lib/postgresql/data
-
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
-  db-data:
+  db_data:

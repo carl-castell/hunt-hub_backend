@@ -1,12 +1,12 @@
-// src/db/index.ts
+// src/db/index.ts (or src/db/client.ts)
 import 'dotenv/config';
 import * as schema from './schema';
 
-// Local (Docker) client
+// Local (Docker) client: node-postgres
 import { Pool } from 'pg';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 
-// Neon serverless client
+// Neon serverless client: neon + neon-http
 import { neon } from '@neondatabase/serverless';
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
 
@@ -19,12 +19,10 @@ let db:
 let pool: Pool | null = null;
 
 if (provider === 'neon') {
-  // Neon serverless (websocket)
   const url = process.env.NEON_DATABASE_URL!;
   const sql = neon(url);
   db = drizzleNeon(sql, { schema });
 } else {
-  // Local Docker Postgres via node-postgres
   const url = process.env.LOCAL_DATABASE_URL!;
   pool = new Pool({
     connectionString: url,

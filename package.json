@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npx tsc",
-    "start": "node dist/src/index.js",
-    "dev": "nodemon --exec tsx src/index.ts",
-    "db:seed": "tsx src/db/seed.ts"
-  },
+    "build": "tsc",
+    "start": "node dist/src/routes/index.js",
+    "dev": "nodemon --exec tsx src/routes/index.ts",
+    "db:gen": "drizzle-kit generate",
+    "db:push": "DRIZZLE_DRIVER=pg drizzle-kit push",
+    "db:push:neon": "drizzle-kit push",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:reset": "docker compose down -v && docker compose up -d && node -e \"console.log('Waiting for DB...')\" && tsx -e \"setTimeout(()=>process.exit(0), 2000)\" && npm run db:push && npm run db:seed"
+  }
+,
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -20,7 +25,8 @@
     "ejs": "^3.1.10",
     "express": "^4.21.0",
     "nodemailer": "^6.9.15",
-    "nodemailer-mailgun-transport": "^2.1.5"
+    "nodemailer-mailgun-transport": "^2.1.5",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/ejs": "^3.1.5",
