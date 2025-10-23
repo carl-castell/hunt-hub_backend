@@ -239,7 +239,6 @@ npm run studio
 # Test
 ## ERD (Entity Relationship Diagram)
 
-> **Note:** If the diagram does not render on GitHub, copy this block to [Mermaid Live Editor](https://mermaid.live) to view it.
 ```mermaid
 erDiagram
     GUESTS {
@@ -345,5 +344,3 @@ erDiagram
     DRIVES ||--o{ STANDSDRIVE : "id <> drive_id"
     GUESTS ||--o{ STANDSGUESTS : "id <> guest_id"
     GROUPS ||--o{ STANDSGROUPS : "id <> group_id"
-
-```
