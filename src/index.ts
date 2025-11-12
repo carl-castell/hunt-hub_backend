@@ -22,7 +22,6 @@ app.get('/', (_req: Request, res: Response) => {
   const data = {
     title: 'Hunt-Hub',
     message: 'This is a simple EJS template rendered by Express!',
-    users: ['Alice', 'Bob', 'Charlie'],
     currentTime: new Date().toLocaleString(),
   };
   res.render('index', data);

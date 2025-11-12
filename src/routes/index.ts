@@ -3,9 +3,8 @@ import dotenv from "dotenv";
 import path from "path";
 
 import { logger } from '../middelwares/logger';
-import { sendMail } from "../mail";
-import { db } from "../db";
-
+import usersRourter from "./users";
+import aboutRouter from "./about"
 
 dotenv.config();
 
@@ -17,6 +16,7 @@ app.set('views', path.join(__dirname, '../views'));
 
 
 app.use(logger)
+// Index route
 app.get('/', (req: Request, res: Response) => {
   const data = {
     title: 'Hunt-Hub',
@@ -28,49 +28,10 @@ app.get('/', (req: Request, res: Response) => {
   res.render('index', data);
 });
 
-app.get('/about', (req: Request, res: Response) => {
-  res.render('about', { 
-    title: 'About Page',
-    description: 'This is the about page rendered with EJS.'
-  });
-});
 
-app.get('/users', async (req, res) => {
-  // Query first 10 users
-     const users = await db.query.usersTable.findMany({
-     limit: 10,
-   });
-
-
-  // Render EJS template, passing users
-  res.render('users', { users, title: 'Users List' });
-});
-
-
-// DB test
-
-app.get('/db', async (req: Request, res: Response) => {
-  try {
-    const users = await db.query.usersTable.findMany();
-    res.json({ users });
-  } catch (error) {
-    res.status(500).json({ error: 'Could not fetch users' });
-  }
-});
-
-
-
-
-// Experiment
-
-app.get('/email/isams', async (req, res) => {
-  try {
-    await sendMail();
-    res.send('Email sent successfully!');
-  } catch (error) {
-    res.status(500).send('Failed to send email');
-  }
-});
+// Other routes
+app.use('/about', aboutRouter);
+app.use('/users', usersRourter);
 
 
 app.listen(port, () => {
