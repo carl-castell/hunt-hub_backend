@@ -1,37 +1,25 @@
 // src/db/index.ts
 import 'dotenv/config';
 import * as schema from './schema';
-
-// Local (Docker) client
 import { Pool } from 'pg';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
-
-// Neon serverless client
 import { neon } from '@neondatabase/serverless';
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
 
 const provider = process.env.DB_PROVIDER ?? 'local';
 
-let db:
-  | ReturnType<typeof drizzlePg>
-  | ReturnType<typeof drizzleNeon>;
-
 let pool: Pool | null = null;
 
-if (provider === 'neon') {
-  // Neon serverless (websocket)
-  const url = process.env.NEON_DATABASE_URL!;
-  const sql = neon(url);
-  db = drizzleNeon(sql, { schema });
-} else {
-  // Local Docker Postgres via node-postgres
-  const url = process.env.LOCAL_DATABASE_URL!;
-  pool = new Pool({
-    connectionString: url,
-    ssl: false, // local Docker typically has no SSL
-  });
-  db = drizzlePg(pool, { schema });
-}
+const db =
+  provider === 'neon'
+    ? drizzleNeon(neon(process.env.NEON_DATABASE_URL!), { schema })
+    : (() => {
+        pool = new Pool({
+          connectionString: process.env.LOCAL_DATABASE_URL!,
+          ssl: false,
+        });
+        return drizzlePg(pool, { schema });
+      })();
 
 export { db, pool };
 export type Db = typeof db;

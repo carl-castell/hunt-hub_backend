@@ -35,26 +35,29 @@ app.get('/about', (req: Request, res: Response) => {
   });
 });
 
+app.get('/users', async (req, res) => {
+  // Query first 10 users
+     const users = await db.query.usersTable.findMany({
+     limit: 10,
+   });
+
+
+  // Render EJS template, passing users
+  res.render('users', { users, title: 'Users List' });
+});
+
 
 // DB test
 
 app.get('/db', async (req: Request, res: Response) => {
   try {
     const users = await db.query.usersTable.findMany();
-    res.json({
-      users,
-    });
+    res.json({ users });
   } catch (error) {
-    console.error('Error fetching posts:', error);
-    res.status(500).json({
-      error: 'An error occurred while fetching posts. Please try again later.',
-    });
+    res.status(500).json({ error: 'Could not fetch users' });
   }
 });
 
-app.get('/1', async (req: Request, res: Response) => {
-  res.send('<a href="http://localhost:3000/1">Reload</a>');
-});
 
 
 
