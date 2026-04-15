@@ -1,4 +1,4 @@
-import { integer, pgTable, pgEnum, varchar, check } from "drizzle-orm/pg-core";
+import { integer, pgTable, pgEnum, varchar, check, boolean } from "drizzle-orm/pg-core";
 import { relations, sql } from 'drizzle-orm';
 import { estatesTable } from "./estates";
 import { groupsTable } from "./groups";
@@ -12,7 +12,8 @@ export const usersTable = pgTable("users", {
   lastName: varchar('last_name',{ length: 255 }).notNull(),
   email: varchar({ length: 255 }).unique().notNull(),
   role: roleEnum().notNull(),
-  password: varchar({ length: 255 }),
+  active: boolean().notNull().default(false),
+  password: varchar({ length: 255 }).notNull(),
 }, (table) => ({
   estateIdRequiredForNonAdmin: check(
     'estate_id_required_for_non_admin',

@@ -4,7 +4,7 @@ import path from "path";
 import session from "express-session";
 
 import { logger } from "./middlewares/logger";
-import { requireAdmin, requireManager, requireStaff } from './middlewares/requireRole';
+import { requireAdmin, requireManager, requireStaff, requireAuth } from './middlewares/requireRole';
 
 
 import homeRouter from "./routes/home";
@@ -12,6 +12,9 @@ import authRouter from "./routes/auth";
 import adminRouter from "./routes/admin";
 import managerRouter from "./routes/manager";
 import staffRouter from "./routes/staff";
+import usersRouter from './routes/users';
+import activateRouter from './routes/activate';
+
 
 dotenv.config();
 
@@ -46,6 +49,8 @@ app.use("/", authRouter);
 app.use("/admin", requireAdmin, adminRouter);
 app.use("/manager", requireManager, managerRouter);
 app.use("/staff", requireStaff, staffRouter);
+app.use('/users', requireAuth, usersRouter);
+app.use('/activate', activateRouter);
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Hunt-Hub | <%= estate.name %></title>
-  <link rel="stylesheet" href="/css/admin.css" />
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
 
@@ -57,7 +57,11 @@
           <% managers.forEach(function(manager) { %>
             <li class="manager-item">
               <div class="manager-info">
-                <span class="manager-name"><%= manager.firstName %> <%= manager.lastName %></span>
+                <span class="manager-name">
+                  <a href="/users/<%= manager.id %>" style="color:#222; text-decoration:none;">
+                    <%= manager.firstName %> <%= manager.lastName %>
+                  </a>
+                </span>
                 <span class="manager-email"><%= manager.email %></span>
               </div>
             </li>
@@ -85,7 +89,8 @@
     <div class="modal">
       <button class="close-modal" id="closeModal">&times;</button>
       <h3>Add Manager</h3>
-      <form action="/admin/estates/<%= estate.id %>/managers" method="POST">
+      <form action="/users/managers" method="POST">
+        <input type="hidden" name="estateId" value="<%= estate.id %>" />
         <div class="form-group">
           <label for="firstName">First Name</label>
           <input type="text" id="firstName" name="firstName" placeholder="First name" required autocomplete="off" />
@@ -103,6 +108,7 @@
           <button type="submit" class="btn-confirm">Add Manager</button>
         </div>
       </form>
+
     </div>
   </div>
 

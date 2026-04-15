@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { db } from '../../db';
-import { estatesTable, usersTable } from '../../db/schema';
+import { estatesTable, usersTable, userAuthTokensTable } from '../../db/schema';
 import { eq } from 'drizzle-orm';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+
 
 export async function createEstate(req: Request, res: Response) {
   try {
@@ -19,7 +22,7 @@ export async function createEstate(req: Request, res: Response) {
     res.status(500).send('Server error');
   }
 }
-
+// gets estate by estate id 
 export async function getEstate(req: Request, res: Response) {
   try {
     const user = req.session.user;
@@ -81,4 +84,6 @@ export async function deleteEstate(req: Request, res: Response) {
     res.status(500).send('Server error');
   }
 }
+
+
 

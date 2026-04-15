@@ -1,0 +1,144 @@
+import { Request, Response } from 'express';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import { eq } from 'drizzle-orm';
+import { db } from '../../db';
+import { usersTable, userAuthTokensTable } from '../../db/schema';
+
+export async function getUser(req: Request, res: Response) {
+  try {
+    const sessionUser = req.session.user!;
+    const { id } = req.params;
+
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, Number(id)))
+      .limit(1);
+
+    if (!user) return res.status(404).send('User not found');
+
+    const [authToken] = await db
+      .select()
+      .from(userAuthTokensTable)
+      .where(eq(userAuthTokensTable.userId, user.id))
+      .limit(1);
+
+    const domain = process.env.DOMAIN || 'http://localhost:3000';
+
+    res.render('users/user', {
+        sessionUser,
+        targetUser: user,
+        domain,
+        activationToken: authToken?.token || null,
+        });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function updateUser(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, email } = req.body;
+
+    await db
+      .update(usersTable)
+      .set({ firstName, lastName, email })
+      .where(eq(usersTable.id, Number(id)));
+
+    res.redirect(`/users/${id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function deactivateUser(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    await db
+      .update(usersTable)
+      .set({ active: false })
+      .where(eq(usersTable.id, Number(id)));
+
+    res.redirect(`/users/${id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function deleteUser(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const sessionUser = req.session.user!;
+
+    // Fetch user before deleting to get estateId
+    const [targetUser] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, Number(id)))
+      .limit(1);
+
+    if (!targetUser) return res.status(404).send('User not found');
+
+    await db
+      .delete(usersTable)
+      .where(eq(usersTable.id, Number(id)));
+
+    if (sessionUser.role === 'admin') {
+      res.redirect(`/admin/estates/${targetUser.estateId}`);
+    } else {
+      res.redirect('/manager');
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+
+export async function resendActivation(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    // Delete any existing activation token
+    await db
+      .delete(userAuthTokensTable)
+      .where(eq(userAuthTokensTable.userId, Number(id)));
+
+    // Create a new activation token — expires in 48 hours
+    const token = crypto.randomUUID();
+    await db.insert(userAuthTokensTable).values({
+      userId: Number(id),
+      token,
+      type: 'activation',
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 48),
+    });
+
+    res.redirect(`/users/${id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function reactivateUser(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    await db
+      .update(usersTable)
+      .set({ active: true })
+      .where(eq(usersTable.id, Number(id)));
+
+    res.redirect(`/users/${id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}

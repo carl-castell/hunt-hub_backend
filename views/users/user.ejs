@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hunt-Hub | <%= targetUser.firstName %> <%= targetUser.lastName %></title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Hunt-Hub <span style="font-weight:300; font-size:1rem;">
+      <% if (sessionUser.role === 'admin') { %>Admin Dashboard<% } else { %>Manager Dashboard<% } %>
+    </span></h1>
+    <div class="header-actions">
+      <% if (sessionUser.role === 'admin') { %>
+        <a href="/admin/estates/<%= targetUser.estateId %>" class="btn-back">← Estate</a>
+      <% } else { %>
+        <a href="/manager" class="btn-back">← Dashboard</a>
+      <% } %>
+      <form action="/logout" method="POST">
+        <button type="submit">Log Out</button>
+      </form>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- User Info Card -->
+    <div class="card">
+      <div class="user-profile-row">
+        <div class="user-profile-info">
+          <div class="estate-name-row">
+            <h2><%= targetUser.firstName %> <%= targetUser.lastName %></h2>
+            <span class="badge"><%= targetUser.role %></span>
+            <% if (targetUser.active) { %>
+              <span class="badge-active">Active</span>
+            <% } else { %>
+              <span class="badge badge-inactive">Inactive</span>
+            <% } %>
+          </div>
+          <p class="user-email"><%= targetUser.email %></p>
+        </div>
+        <button class="btn-icon" id="editUserBtn" title="Edit user">✏️</button>
+      </div>
+
+      <!-- Edit Form (hidden by default) -->
+      <form class="edit-user-form" id="editUserForm" action="/users/<%= targetUser.id %>/update" method="POST">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" name="firstName" value="<%= targetUser.firstName %>" required autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" name="lastName" value="<%= targetUser.lastName %>" required autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" value="<%= targetUser.email %>" required autocomplete="off" />
+        </div>
+        <div class="edit-user-actions">
+          <button type="submit" class="btn-save">Save Changes</button>
+          <button type="button" class="btn-cancel-edit" id="cancelEditUserBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Activation Link Card (only if not active) -->
+    <% if (!targetUser.active && activationToken) { %>
+    <div class="card">
+      <div class="activation-card-header">
+        <div>
+          <h3>Activation Link</h3>
+          <p class="activation-card-sub">This user has not activated their account yet.</p>
+        </div>
+        <form action="/users/<%= targetUser.id %>/resend-activation" method="POST">
+          <button type="submit" class="btn-icon" title="Regenerate link">🔄 Regenerate</button>
+        </form>
+      </div>
+      <div class="activation-link-box">
+        <span class="activation-link-text" id="activationLinkInput"><%= domain %>/activate/<%= activationToken %></span>
+        <button type="button" class="btn-copy" id="copyLinkBtn">Copy</button>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Account Actions Card -->
+    <div class="card">
+      <h3 style="margin-bottom: 20px;">Account Actions</h3>
+
+      <% if (targetUser.active) { %>
+        <form action="/users/<%= targetUser.id %>/deactivate" method="POST">
+          <button type="submit" class="btn-save">Deactivate Account</button>
+        </form>
+      <% } else { %>
+        <form action="/users/<%= targetUser.id %>/reactivate" method="POST">
+          <button type="submit" class="btn-save">Reactivate Account</button>
+        </form>
+      <% } %>
+
+      <% if (sessionUser.role === 'admin') { %>
+        <form action="/users/<%= targetUser.id %>/delete" method="POST" id="deleteUserForm"></form>
+        <div class="danger-zone" style="margin-top:16px;">
+          <p>Permanently delete this user and all their data.</p>
+          <div id="deleteUserConfirm" style="display:none; gap:10px; align-items:center;">
+            <span style="font-size:0.875rem; color:#e53e3e;">Are you sure?</span>
+            <button type="button" class="btn-delete" id="confirmDeleteUserBtn">Yes, delete</button>
+            <button type="button" class="btn-cancel-edit" id="cancelDeleteUserBtn">Cancel</button>
+          </div>
+          <button type="button" class="btn-delete" id="deleteUserBtn">Delete User</button>
+        </div>
+      <% } %>
+    </div>
+
+  </div>
+
+  <script>
+    // Edit user toggle
+    const editUserBtn = document.getElementById('editUserBtn');
+    const editUserForm = document.getElementById('editUserForm');
+    const cancelEditUserBtn = document.getElementById('cancelEditUserBtn');
+
+    editUserBtn.addEventListener('click', () => {
+      editUserForm.style.display = 'block';
+      editUserBtn.style.display = 'none';
+    });
+
+    cancelEditUserBtn.addEventListener('click', () => {
+      editUserForm.style.display = 'none';
+      editUserBtn.style.display = 'inline-block';
+    });
+
+    // Copy activation link
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+    if (copyLinkBtn) {
+      copyLinkBtn.addEventListener('click', () => {
+        const text = document.getElementById('activationLinkInput').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          copyLinkBtn.textContent = 'Copied!';
+          setTimeout(() => copyLinkBtn.textContent = 'Copy', 2000);
+        });
+      });
+    }
+
+    // Delete user confirmation
+    const deleteUserBtn = document.getElementById('deleteUserBtn');
+    if (deleteUserBtn) {
+      const deleteUserConfirm = document.getElementById('deleteUserConfirm');
+      const confirmDeleteUserBtn = document.getElementById('confirmDeleteUserBtn');
+      const cancelDeleteUserBtn = document.getElementById('cancelDeleteUserBtn');
+
+      deleteUserConfirm.style.display = 'none';
+      deleteUserBtn.style.display = 'inline-block';
+
+      deleteUserBtn.addEventListener('click', () => {
+        deleteUserBtn.style.display = 'none';
+        deleteUserConfirm.style.display = 'flex';
+      });
+
+      cancelDeleteUserBtn.addEventListener('click', () => {
+        deleteUserConfirm.style.display = 'none';
+        deleteUserBtn.style.display = 'inline-block';
+      });
+
+      confirmDeleteUserBtn.addEventListener('click', () => {
+        document.getElementById('deleteUserForm').submit();
+      });
+    }
+  </script>
+
+</body>
+</html>

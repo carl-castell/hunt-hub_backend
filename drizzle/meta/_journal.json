@@ -8,6 +8,13 @@
       "when": 1761136728525,
       "tag": "0000_red_kronos",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776274117403,
+      "tag": "0001_rare_fantastic_four",
+      "breakpoints": true
     }
   ]
 }

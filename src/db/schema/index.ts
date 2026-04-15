@@ -9,3 +9,4 @@ export * from './invitations';
 export * from './licenses';
 export * from './stands';
 export * from './terretories';
+export * from './user_auth_tokens';
