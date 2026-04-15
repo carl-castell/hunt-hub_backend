@@ -1,0 +1,405 @@
+/* =====================
+   RESET & BASE
+   ===================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background: #f4f4f4; }
+
+/* =====================
+   HEADER
+   ===================== */
+header {
+  background: #222;
+  color: #fff;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 { font-size: 1.4rem; }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+header form button,
+.btn-back {
+  background: transparent;
+  border: 1px solid #fff;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: background 0.2s;
+  display: inline-block;
+}
+
+header form button:hover,
+.btn-back:hover { background: #444; }
+
+/* =====================
+   LAYOUT
+   ===================== */
+.content {
+  max-width: 900px;
+  margin: 48px auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* =====================
+   WELCOME BANNER
+   ===================== */
+.welcome {
+  background: #fff;
+  border-radius: 10px;
+  padding: 36px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.welcome h2 { font-size: 1.6rem; color: #222; margin-bottom: 10px; }
+.welcome p { color: #666; line-height: 1.6; }
+
+/* =====================
+   BADGE
+   ===================== */
+.badge {
+  display: inline-block;
+  background: #222;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 99px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* =====================
+   CARD
+   ===================== */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 32px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.card-header h3 { font-size: 1.2rem; color: #222; }
+
+/* =====================
+   EMPTY STATE
+   ===================== */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.empty-state svg { margin-bottom: 16px; opacity: 0.3; }
+.empty-state p { font-size: 1rem; margin-bottom: 6px; color: #666; }
+.empty-state span { font-size: 0.875rem; color: #aaa; }
+
+/* =====================
+   ESTATE LIST (dashboard)
+   ===================== */
+.estate-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.estate-list li a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #222;
+  font-size: 0.95rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.estate-list li a:hover {
+  background: #f9f9f9;
+  border-color: #ccc;
+}
+
+.estate-list li a .estate-name { font-weight: 600; }
+.estate-list li a .arrow { color: #aaa; font-size: 1rem; }
+
+/* =====================
+   ADD BUTTON
+   ===================== */
+.add-btn-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.add-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #222;
+  color: #fff;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.add-btn:hover { background: #444; }
+
+/* =====================
+   ESTATE NAME (estate page)
+   ===================== */
+.estate-name-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.estate-name-row h2 { font-size: 1.6rem; color: #222; }
+
+.estate-meta { margin-top: 8px; font-size: 0.85rem; color: #aaa; }
+
+.btn-icon {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 5px 9px;
+  cursor: pointer;
+  color: #555;
+  font-size: 1rem;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1;
+}
+
+.btn-icon:hover { background: #f4f4f4; border-color: #bbb; }
+
+.edit-name-form {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.edit-name-form input[type="text"] {
+  flex: 1;
+  padding: 9px 13px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.edit-name-form input[type="text"]:focus { border-color: #222; }
+
+/* =====================
+   DANGER ZONE
+   ===================== */
+.danger-zone {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.danger-zone p { font-size: 0.875rem; color: #999; }
+
+.btn-delete {
+  background: #fff;
+  border: 1px solid #e53e3e;
+  color: #e53e3e;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-delete:hover { background: #e53e3e; color: #fff; }
+
+/* =====================
+   MANAGER LIST (estate page)
+   ===================== */
+.manager-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.manager-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #222;
+}
+
+.manager-info { display: flex; flex-direction: column; gap: 2px; }
+.manager-name { font-weight: 600; }
+.manager-email { font-size: 0.8rem; color: #aaa; }
+
+/* =====================
+   BUTTONS
+   ===================== */
+.btn-save {
+  background: #222;
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-save:hover { background: #444; }
+
+.btn-cancel-edit {
+  background: transparent;
+  border: 1px solid #ccc;
+  color: #555;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-cancel-edit:hover { background: #f4f4f4; }
+
+/* =====================
+   MODAL
+   ===================== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  position: relative;
+}
+
+.modal h3 { font-size: 1.2rem; color: #222; margin-bottom: 20px; }
+
+.form-group { margin-bottom: 18px; }
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.modal input[type="text"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 0;
+}
+
+.form-group input:focus,
+.modal input[type="text"]:focus { border-color: #222; }
+
+.modal label {
+  display: block;
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid #ccc;
+  color: #555;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.btn-cancel:hover { background: #f4f4f4; }
+
+.btn-confirm {
+  background: #222;
+  border: none;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.btn-confirm:hover { background: #444; }
+
+.close-modal {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: #aaa;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-modal:hover { color: #222; }

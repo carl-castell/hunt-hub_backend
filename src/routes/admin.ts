@@ -1,10 +1,14 @@
-import express, { Router, Request, Response } from "express";
-import { requireLogin, requireAdmin } from "../middlewares/auth";
+import express from 'express';
+import { getDashboard } from '../controllers/admin/dashboard';
+import { createEstate, getEstate, renameEstate, deleteEstate } from '../controllers/admin/estates';
 
-const adminRouter: Router = express.Router();
+const router = express.Router();
 
-adminRouter.get("/", requireLogin, requireAdmin, (req: Request, res: Response) => {
-  res.render("admin", { user: req.session.user });
-});
+router.get('/', getDashboard);
+router.post('/estates', createEstate);
+router.get('/estates/:id', getEstate);
+router.post('/estates/:id/rename', renameEstate);
+router.post('/estates/:id/delete', deleteEstate);
 
-export default adminRouter;
+
+export default router;

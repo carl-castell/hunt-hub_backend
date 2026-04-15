@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hunt-Hub | <%= estate.name %></title>
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Hunt-Hub <span style="font-weight:300; font-size:1rem;">Admin Dashboard</span></h1>
+    <div class="header-actions">
+      <a href="/admin" class="btn-back">← Dashboard</a>
+      <form action="/logout" method="POST">
+        <button type="submit">Log Out</button>
+      </form>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- Estate Name Card -->
+    <div class="card">
+      <div class="estate-name-row">
+        <h2 id="estateName"><%= estate.name %></h2>
+        <button class="btn-icon" id="editNameBtn" title="Edit name">✏️</button>
+      </div>
+      <p class="estate-meta">Estate ID: <%= estate.id %></p>
+
+      <!-- Edit Name Form -->
+      <form class="edit-name-form" id="editNameForm" action="/admin/estates/<%= estate.id %>/rename" method="POST">
+        <input type="text" name="name" value="<%= estate.name %>" required autocomplete="off" />
+        <button type="submit" class="btn-save">Save</button>
+        <button type="button" class="btn-cancel-edit" id="cancelEditBtn">Cancel</button>
+      </form>
+
+      <form action="/admin/estates/<%= estate.id %>/delete" method="POST" id="deleteForm"></form>
+      <div class="danger-zone">
+        <p>Permanently delete this estate and all its data.</p>
+        <div id="deleteConfirm" style="display:none; display:flex; gap:10px; align-items:center;">
+          <span style="font-size:0.875rem; color:#e53e3e;">Are you sure?</span>
+          <button type="button" class="btn-delete" id="confirmDeleteBtn">Yes, delete</button>
+          <button type="button" class="btn-cancel-edit" id="cancelDeleteBtn">Cancel</button>
+        </div>
+        <button type="button" class="btn-delete" id="deleteBtn">Delete Estate</button>
+      </div>
+    </div>
+
+    <!-- Managers Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Managers</h3>
+      </div>
+
+      <% if (managers && managers.length > 0) { %>
+        <ul class="manager-list">
+          <% managers.forEach(function(manager) { %>
+            <li class="manager-item">
+              <div class="manager-info">
+                <span class="manager-name"><%= manager.firstName %> <%= manager.lastName %></span>
+                <span class="manager-email"><%= manager.email %></span>
+              </div>
+            </li>
+          <% }); %>
+        </ul>
+      <% } else { %>
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          <p>No managers yet.</p>
+          <span>Click the <strong>+</strong> button below to add one.</span>
+        </div>
+      <% } %>
+
+      <div class="add-btn-row">
+        <button class="add-btn" id="openModal" title="Add manager">+</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Add Manager Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <button class="close-modal" id="closeModal">&times;</button>
+      <h3>Add Manager</h3>
+      <form action="/admin/estates/<%= estate.id %>/managers" method="POST">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" name="firstName" placeholder="First name" required autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" name="lastName" placeholder="Last name" required autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="manager@example.com" required autocomplete="off" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn-confirm">Add Manager</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+
+    // Edit name toggle
+    const editBtn = document.getElementById('editNameBtn');
+    const editForm = document.getElementById('editNameForm');
+    const cancelEdit = document.getElementById('cancelEditBtn');
+
+    editBtn.addEventListener('click', () => {
+      editForm.style.display = 'flex';
+      editBtn.style.display = 'none';
+    });
+
+    cancelEdit.addEventListener('click', () => {
+      editForm.style.display = 'none';
+      editBtn.style.display = 'inline-block';
+    });
+
+    // Delete confirmation
+    const deleteBtn = document.getElementById('deleteBtn');
+    const deleteConfirm = document.getElementById('deleteConfirm');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+
+    // Reset on load
+    deleteConfirm.style.display = 'none';
+    deleteBtn.style.display = 'inline-block';
+
+    deleteBtn.addEventListener('click', () => {
+      deleteBtn.style.display = 'none';
+      deleteConfirm.style.display = 'flex';
+    });
+
+    cancelDeleteBtn.addEventListener('click', () => {
+      deleteConfirm.style.display = 'none';
+      deleteBtn.style.display = 'inline-block';
+    });
+
+    confirmDeleteBtn.addEventListener('click', () => {
+      document.getElementById('deleteForm').submit();
+    });
+
+
+    // Add manager modal
+    const overlay = document.getElementById('modalOverlay');
+    const openBtn = document.getElementById('openModal');
+    const closeBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    function openModal() {
+      overlay.classList.add('active');
+      document.getElementById('firstName').focus();
+    }
+
+    function closeModal() {
+      overlay.classList.remove('active');
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
+
+</body>
+</html>

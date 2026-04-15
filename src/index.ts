@@ -37,6 +37,9 @@ app.use(
 
 app.use(logger);
 
+app.use(express.static(path.join(__dirname, '../public')));
+
+
 app.use("/", homeRouter);
 app.use("/about", aboutRouter);
 app.use("/users", usersRouter);
