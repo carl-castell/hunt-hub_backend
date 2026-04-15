@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hunt-Hub | Admin Dashboard</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: Arial, sans-serif; background: #f4f4f4; }
+
+      header {
+        background: #222;
+        color: #fff;
+        padding: 16px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      header h1 { font-size: 1.4rem; }
+
+      form button {
+        background: transparent;
+        border: 1px solid #fff;
+        color: #fff;
+        padding: 6px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+      }
+
+      form button:hover { background: #444; }
+
+      .content {
+        max-width: 900px;
+        margin: 48px auto;
+        padding: 0 24px;
+      }
+
+      .welcome {
+        background: #fff;
+        border-radius: 10px;
+        padding: 36px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      }
+
+      .welcome h2 { font-size: 1.6rem; color: #222; margin-bottom: 10px; }
+      .welcome p { color: #666; line-height: 1.6; }
+
+      .badge {
+        display: inline-block;
+        background: #222;
+        color: #fff;
+        font-size: 0.75rem;
+        padding: 2px 10px;
+        border-radius: 99px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Hunt-Hub <span style="font-weight:300; font-size:1rem;">Admin Dashboard</span></h1>
+      <form action="/logout" method="POST">
+        <button type="submit">Log Out</button>
+      </form>
+    </header>
+
+    <div class="content">
+      <div class="welcome">
+        <h2>Welcome, <%= user.username %> <span class="badge">Admin</span></h2>
+        <p>You have full administrative access. Use this dashboard to manage users, content, and system settings.</p>
+      </div>
+    </div>
+  </body>
+</html>

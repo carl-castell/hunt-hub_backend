@@ -10,6 +10,10 @@ import { estatesTable } from './schema/estates';
 
 import { getTableName, sql, Table } from 'drizzle-orm';
 
+import bcrypt from "bcrypt";
+
+const SALT_ROUNDS = 10;
+
 // Reset a single table
 async function resetTable(table: Table) {
   return db.execute(
@@ -46,7 +50,7 @@ async function main() {
   console.log('> seeding started');
   const startTime = Date.now();
 
-  // Admin insert ↓
+  // Admin 
 await db
   .insert(usersTable)
   .values({
@@ -54,10 +58,12 @@ await db
     lastName: process.env.ADMIN_LAST_NAME!,
     email: process.env.ADMIN_EMAIL!,
     role: "admin",
-    password: process.env.ADMIN_PASSWORD!,
+    password: await bcrypt.hash(process.env.ADMIN_PASSWORD!, SALT_ROUNDS),
   })
   .returning();
 console.log(`  Admin user inserted`);
+
+
 
   const estates = await readEstatesFromFile('./src/db/data/estates.json');
   let estateId = 1;
