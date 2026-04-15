@@ -6,7 +6,6 @@ import { estatesTable } from '../../db/schema';
 export async function getDashboard(req: Request, res: Response) {
   try {
     const user = req.session.user;
-    if (!user) return res.redirect('/login');
 
     const estates = await db.select().from(estatesTable);
     res.render('admin/admin-dashboard', { user, estates });

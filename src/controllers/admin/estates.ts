@@ -6,7 +6,6 @@ import { eq } from 'drizzle-orm';
 export async function createEstate(req: Request, res: Response) {
   try {
     const user = req.session.user;
-    if (!user) return res.redirect('/login');
 
     const { name } = req.body;
     const [newEstate] = await db
@@ -24,7 +23,6 @@ export async function createEstate(req: Request, res: Response) {
 export async function getEstate(req: Request, res: Response) {
   try {
     const user = req.session.user;
-    if (!user) return res.redirect('/login');
 
     const { id } = req.params;
 
@@ -51,7 +49,6 @@ export async function getEstate(req: Request, res: Response) {
 export async function renameEstate(req: Request, res: Response) {
   try {
     const user = req.session.user;
-    if (!user) return res.redirect('/login');
 
     const { id } = req.params;
     const { name } = req.body;
@@ -71,7 +68,6 @@ export async function renameEstate(req: Request, res: Response) {
 export async function deleteEstate(req: Request, res: Response) {
   try {
     const user = req.session.user;
-    if (!user) return res.redirect('/login');
 
     const { id } = req.params;
 

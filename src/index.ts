@@ -4,8 +4,9 @@ import path from "path";
 import session from "express-session";
 
 import { logger } from "./middlewares/logger";
-import usersRouter from "./routes/users";
-import aboutRouter from "./routes/about";
+import { requireAdmin, requireManager, requireStaff } from './middlewares/requireRole';
+
+
 import homeRouter from "./routes/home";
 import authRouter from "./routes/auth";
 import adminRouter from "./routes/admin";
@@ -41,12 +42,10 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 
 app.use("/", homeRouter);
-app.use("/about", aboutRouter);
-app.use("/users", usersRouter);
 app.use("/", authRouter);
-app.use("/admin", adminRouter);
-app.use("/manager", managerRouter);
-app.use("/staff", staffRouter);
+app.use("/admin", requireAdmin, adminRouter);
+app.use("/manager", requireManager, managerRouter);
+app.use("/staff", requireStaff, staffRouter);
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
