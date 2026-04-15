@@ -2,74 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hunt-Hub | Manager Dashboard</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: Arial, sans-serif; background: #f4f4f4; }
-
-      header {
-        background: #1a5276;
-        color: #fff;
-        padding: 16px 32px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      header h1 { font-size: 1.4rem; }
-
-      form button {
-        background: transparent;
-        border: 1px solid #fff;
-        color: #fff;
-        padding: 6px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: background 0.2s;
-      }
-
-      form button:hover { background: #154360; }
-
-      .content {
-        max-width: 900px;
-        margin: 48px auto;
-        padding: 0 24px;
-      }
-
-      .welcome {
-        background: #fff;
-        border-radius: 10px;
-        padding: 36px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-      }
-
-      .welcome h2 { font-size: 1.6rem; color: #222; margin-bottom: 10px; }
-      .welcome p { color: #666; line-height: 1.6; }
-
-      .badge {
-        display: inline-block;
-        background: #1a5276;
-        color: #fff;
-        font-size: 0.75rem;
-        padding: 2px 10px;
-        border-radius: 99px;
-        margin-left: 8px;
-        vertical-align: middle;
-      }
-    </style>
+    <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body>
-    <header>
-      <h1>Hunt-Hub <span style="font-weight:300; font-size:1rem;">Manager Dashboard</span></h1>
+    <header class="site-header">
+      <h1>Hunt-Hub <span class="site-header-sub">Manager Dashboard</span></h1>
       <form action="/logout" method="POST">
-        <button type="submit">Log Out</button>
+        <button type="submit" class="btn btn-outline">Log Out</button>
       </form>
     </header>
 
-    <div class="content">
-      <div class="welcome">
-        <h2>Welcome, <%= user.firstName %> <%= user.lastName %> <span class="badge">Manager</span></h2>
+    <div class="page-content">
+      <div class="card">
+        <h2>
+          Welcome, <%= user.firstName %> <%= user.lastName %>
+          <span class="badge">Manager</span>
+        </h2>
         <p>You are logged in as a manager. Use this dashboard to oversee your estate's operations and staff.</p>
       </div>
     </div>
