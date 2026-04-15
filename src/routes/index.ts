@@ -4,7 +4,8 @@ import path from "path";
 
 import { logger } from '../middelwares/logger';
 import usersRourter from "./users";
-import aboutRouter from "./about"
+import aboutRouter from "./about";
+import homeRouter from "./home";
 
 dotenv.config();
 
@@ -16,20 +17,8 @@ app.set('views', path.join(__dirname, '../views'));
 
 
 app.use(logger)
-// Index route
-app.get('/', (req: Request, res: Response) => {
-  const data = {
-    title: 'Hunt-Hub',
-    message: 'This is a simple EJS template rendered by Express!',
-    users: ['Alice', 'Bob', 'Charlie'],
-    currentTime: new Date().toLocaleString()
-  };
-  
-  res.render('index', data);
-});
 
-
-// Other routes
+app.use('/', homeRouter);
 app.use('/about', aboutRouter);
 app.use('/users', usersRourter);
 

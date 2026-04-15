@@ -46,6 +46,19 @@ async function main() {
   console.log('> seeding started');
   const startTime = Date.now();
 
+  // Admin insert ↓
+await db
+  .insert(usersTable)
+  .values({
+    firstName: process.env.ADMIN_FIRST_NAME!,
+    lastName: process.env.ADMIN_LAST_NAME!,
+    email: process.env.ADMIN_EMAIL!,
+    role: "admin",
+    password: process.env.ADMIN_PASSWORD!,
+  })
+  .returning();
+console.log(`  Admin user inserted`);
+
   const estates = await readEstatesFromFile('./src/db/data/estates.json');
   let estateId = 1;
   for (const estate of estates) {
@@ -79,6 +92,7 @@ async function main() {
 
 // Users
 async function users(num: number, id: number) {
+  // Insert staff users
   for (let index = 0; index < num; index++) {
     await db
       .insert(usersTable)
@@ -86,7 +100,7 @@ async function users(num: number, id: number) {
         firstName: faker.person.firstName(),
         lastName: faker.person.lastName(),
         email: `${index}${faker.internet.email()}`,
-        role: faker.helpers.arrayElement(roleEnum.enumValues),
+        role: "staff",
         password: faker.internet.password({ length: 12 }),
         estateId: id,
       })
@@ -94,6 +108,7 @@ async function users(num: number, id: number) {
     process.stdout.write(`  ${index + 1} users inserted\r`);
   }
 }
+
 
 // Guests
 async function guests(num: number, id: number) {
