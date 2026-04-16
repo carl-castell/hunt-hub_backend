@@ -1,22 +1,30 @@
-import express, { Router, Request, Response } from "express";
-import bcrypt from "bcrypt";
-import { eq } from "drizzle-orm";
-import { db } from "../db";
-import { usersTable } from "../db/schema/users";
+import express, { Router, Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import { eq } from 'drizzle-orm';
+import { db } from '../db';
+import { usersTable } from '../db/schema/users';
+import { loginSchema } from '../schemas';
 
 const authRouter: Router = express.Router();
 
 // GET /login
-authRouter.get("/login", (req: Request, res: Response) => {
-  if (req.session.user) {
-    return redirectByRole(req, res);
-  }
-  res.render("login", { error: null });
+authRouter.get('/login', (req: Request, res: Response) => {
+  if (req.session.user) return redirectByRole(req, res);
+  res.render('login', { title: 'Hunt-Hub | Login', error: null });
 });
 
 // POST /login
-authRouter.post("/login", async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+authRouter.post('/login', async (req: Request, res: Response) => {
+  // ── Zod validation ──────────────────────────────────────────────────────────
+  const result = loginSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.render('login', {
+      title: 'Hunt-Hub | Login',
+      error: result.error.errors[0].message,
+    });
+  }
+
+  const { email, password } = result.data;
 
   try {
     const [user] = await db
@@ -26,45 +34,41 @@ authRouter.post("/login", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!user || !user.password) {
-      return res.render("login", { error: "Invalid email or password." });
+      return res.render('login', { title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
-
     if (!passwordMatch) {
-      return res.render("login", { error: "Invalid email or password." });
+      return res.render('login', { title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
     }
 
     req.session.user = {
-      id: user.id,
+      id:        user.id,
       firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-      estateId: user.estateId ?? null,
+      lastName:  user.lastName,
+      email:     user.email,
+      role:      user.role,
+      estateId:  user.estateId ?? null,
     };
 
     return redirectByRole(req, res);
-
   } catch (err) {
-    console.error("[login error]", err);
-    return res.render("login", { error: "Something went wrong. Please try again." });
+    console.error('[login error]', err);
+    return res.render('login', { title: 'Hunt-Hub | Login', error: 'Something went wrong. Please try again.' });
   }
 });
 
 // POST /logout
-authRouter.post("/logout", (req: Request, res: Response) => {
-  req.session.destroy(() => {
-    res.redirect("/login");
-  });
+authRouter.post('/logout', (req: Request, res: Response) => {
+  req.session.destroy(() => res.redirect('/login'));
 });
 
 function redirectByRole(req: Request, res: Response) {
   switch (req.session.user?.role) {
-    case "admin":   return res.redirect("/admin");
-    case "manager": return res.redirect("/manager");
-    case "staff":   return res.redirect("/staff");
-    default:        return res.redirect("/login");
+    case 'admin':   return res.redirect('/admin');
+    case 'manager': return res.redirect('/manager');
+    case 'staff':   return res.redirect('/staff');
+    default:        return res.redirect('/login');
   }
 }
 

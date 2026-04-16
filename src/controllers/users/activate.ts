@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable, userAuthTokensTable } from '../../db/schema';
+import { activateSchema } from '@/schemas';
 
 export async function getActivate(req: Request, res: Response) {
   try {
@@ -27,11 +28,17 @@ export async function getActivate(req: Request, res: Response) {
 export async function postActivate(req: Request, res: Response) {
   try {
     const { token } = req.params;
-    const { password, confirmPassword } = req.body;
 
-    if (password !== confirmPassword) {
-      return res.render('activate', { error: 'Passwords do not match.', token });
+    // ── Zod validation ────────────────────────────────────────────────────────
+    const result = activateSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.render('activate', {
+        error: result.error.issues[0].message,
+        token,
+      });
     }
+
+    const { password } = result.data;
 
     const [authToken] = await db
       .select()

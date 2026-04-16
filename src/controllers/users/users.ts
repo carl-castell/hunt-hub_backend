@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable, userAuthTokensTable } from '../../db/schema';
+import { updateUserSchema } from '@/schemas';
 
 export async function getUser(req: Request, res: Response) {
   try {
@@ -27,12 +27,11 @@ export async function getUser(req: Request, res: Response) {
     const domain = process.env.DOMAIN || 'http://localhost:3000';
 
     res.render('users/user', {
-        sessionUser,
-        targetUser: user,
-        domain,
-        activationToken: authToken?.token || null,
-        });
-
+      sessionUser,
+      targetUser: user,
+      domain,
+      activationToken: authToken?.token || null,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -42,7 +41,14 @@ export async function getUser(req: Request, res: Response) {
 export async function updateUser(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { firstName, lastName, email } = req.body;
+
+    // ── Zod validation ────────────────────────────────────────────────────────
+    const result = updateUserSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).send(result.error.issues[0].message);
+    }
+
+    const { firstName, lastName, email } = result.data;
 
     await db
       .update(usersTable)
@@ -59,12 +65,7 @@ export async function updateUser(req: Request, res: Response) {
 export async function deactivateUser(req: Request, res: Response) {
   try {
     const { id } = req.params;
-
-    await db
-      .update(usersTable)
-      .set({ active: false })
-      .where(eq(usersTable.id, Number(id)));
-
+    await db.update(usersTable).set({ active: false }).where(eq(usersTable.id, Number(id)));
     res.redirect(`/users/${id}`);
   } catch (err) {
     console.error(err);
@@ -77,7 +78,6 @@ export async function deleteUser(req: Request, res: Response) {
     const { id } = req.params;
     const sessionUser = req.session.user!;
 
-    // Fetch user before deleting to get estateId
     const [targetUser] = await db
       .select()
       .from(usersTable)
@@ -86,9 +86,7 @@ export async function deleteUser(req: Request, res: Response) {
 
     if (!targetUser) return res.status(404).send('User not found');
 
-    await db
-      .delete(usersTable)
-      .where(eq(usersTable.id, Number(id)));
+    await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
 
     if (sessionUser.role === 'admin') {
       res.redirect(`/admin/estates/${targetUser.estateId}`);
@@ -101,17 +99,12 @@ export async function deleteUser(req: Request, res: Response) {
   }
 }
 
-
 export async function resendActivation(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    // Delete any existing activation token
-    await db
-      .delete(userAuthTokensTable)
-      .where(eq(userAuthTokensTable.userId, Number(id)));
+    await db.delete(userAuthTokensTable).where(eq(userAuthTokensTable.userId, Number(id)));
 
-    // Create a new activation token — expires in 48 hours
     const token = crypto.randomUUID();
     await db.insert(userAuthTokensTable).values({
       userId: Number(id),
@@ -130,12 +123,7 @@ export async function resendActivation(req: Request, res: Response) {
 export async function reactivateUser(req: Request, res: Response) {
   try {
     const { id } = req.params;
-
-    await db
-      .update(usersTable)
-      .set({ active: true })
-      .where(eq(usersTable.id, Number(id)));
-
+    await db.update(usersTable).set({ active: true }).where(eq(usersTable.id, Number(id)));
     res.redirect(`/users/${id}`);
   } catch (err) {
     console.error(err);

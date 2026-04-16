@@ -3,10 +3,18 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { db } from '../../db';
 import { usersTable, userAuthTokensTable } from '../../db/schema';
+import { createManagerSchema } from '@/schemas';
 
 export async function createManager(req: Request, res: Response) {
   try {
-    const { firstName, lastName, email, estateId } = req.body;
+    // ── Zod validation ────────────────────────────────────────────────────────
+    const result = createManagerSchema.safeParse(req.body);
+    if (!result.success) {
+      // Redirect back with error — or render if you have a form page
+      return res.status(400).send(result.error.issues[0].message);
+    }
+
+    const { firstName, lastName, email, estateId } = result.data;
 
     // Create user with random password and active: false
     const randomPassword = await bcrypt.hash(crypto.randomUUID(), 10);
