@@ -67,18 +67,18 @@ async function guests(num: number, id: number) {
 }
 
 async function territories(num: number, id: number) {
-  let territoryId = 1;
+  let areaId = 1;
   for (let index = 0; index < num; index++) {
     await db
-      .insert(schema.territoriesTable)
+      .insert(schema.areasTable)
       .values({
-        territoryName: `Revier ${fakerDE.location.city()}`,
+        name: `Revier ${fakerDE.location.city()}`,
         estateId: id,
       })
       .returning();
     process.stdout.write(`  ${index + 1} territories inserted\r`);
-    await stands(50, territoryId);
-    territoryId++;
+    await stands(50, areaId);
+    areaId++;
   }
 }
 
@@ -106,7 +106,7 @@ async function stands(num: number, id: number) {
     await db
       .insert(schema.standsTable)
       .values({
-        territoryId: id,
+        areaId: id,
         number: standId.toString(),
       })
       .returning();

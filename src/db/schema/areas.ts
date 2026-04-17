@@ -3,18 +3,15 @@ import { relations } from 'drizzle-orm';
 import { estatesTable } from "./estates";
 import { standsTable } from "./stands";
 
-
-
-export const territoriesTable = pgTable("territories", {
+export const areasTable = pgTable("areas", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   estateId: integer('estate_id'),
-  territoryName: varchar('territory_name',{ length: 255 }).notNull(),
-
+  name: varchar('name', { length: 255 }).notNull(),
 });
 
-export const territorysRelations = relations(territoriesTable, ({ one, many }) => ({
+export const areasRelations = relations(areasTable, ({ one, many }) => ({
   estate: one(estatesTable, {
-    fields: [territoriesTable.estateId],
+    fields: [areasTable.estateId],
     references: [estatesTable.id],
   }),
   stands: many(standsTable),

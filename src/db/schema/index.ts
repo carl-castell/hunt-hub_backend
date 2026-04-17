@@ -8,5 +8,5 @@ export * from './groups';
 export * from './invitations';
 export * from './licenses';
 export * from './stands';
-export * from './territories';
+export * from './areas';
 export * from './user_auth_tokens';

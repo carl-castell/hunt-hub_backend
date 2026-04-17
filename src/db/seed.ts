@@ -26,7 +26,7 @@ async function main() {
       schema.trainingCertificatesTable,
       schema.licensesTable,
       schema.standsTable,
-      schema.territoriesTable,
+      schema.areasTable,
       schema.drivesTable,
       schema.groupsTable,
       schema.usersTable,
