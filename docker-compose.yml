@@ -1,22 +1,38 @@
-version: "3.9"
 services:
   db:
-    container_name: local_postgres
     image: postgis/postgis:16-3.4
+    container_name: local_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
       POSTGRES_DB: appdb
     ports:
-      - "5433:5432" # change to "5432:5432" if 5432 is free on your host
+      - "5433:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+      test: ["CMD", "pg_isready", "-U", "app", "-d", "appdb"]
       interval: 5s
-      timeout: 3s
+      retries: 20
+
+  db_test:
+    image: postgis/postgis:16-3.4
+    container_name: local_postgres_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: appdb_test
+    ports:
+      - "5434:5432"
+    volumes:
+      - db_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "app", "-d", "appdb_test"]
+      interval: 5s
       retries: 20
 
 volumes:
   db_data:
+  db_test_data:

@@ -20,7 +20,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
   if (!result.success) {
     return res.render('login', {
       title: 'Hunt-Hub | Login',
-      error: result.error.errors[0].message,
+      error: result.error.issues[0].message,
     });
   }
 
@@ -37,6 +37,13 @@ authRouter.post('/login', async (req: Request, res: Response) => {
       return res.render('login', { title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
     }
 
+    if (!user.active) {
+      return res.render('login', {
+        title: 'Hunt-Hub | Login',
+        error: 'Your account is inactive. Please reach out to management or an admin.',
+      });
+    }
+
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.render('login', { title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
@@ -48,6 +55,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
       lastName:  user.lastName,
       email:     user.email,
       role:      user.role,
+      active:    user.active,
       estateId:  user.estateId ?? null,
     };
 
