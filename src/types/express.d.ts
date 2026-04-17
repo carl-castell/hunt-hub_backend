@@ -2,7 +2,7 @@
 import type { InferSelectModel } from 'drizzle-orm';
 import type { usersTable } from '../db/schema';
 
-type User = InferSelectModel<typeof usersTable>;
+type User = Omit<InferSelectModel<typeof usersTable>, 'password'>;
 
 declare module 'express-session' {
   interface SessionData {

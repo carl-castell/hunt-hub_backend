@@ -15,6 +15,20 @@
       "when": 1776274117403,
       "tag": "0001_rare_fantastic_four",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776414270353,
+      "tag": "0002_eager_quasar",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776414821564,
+      "tag": "0003_boring_typhoid_mary",
+      "breakpoints": true
     }
   ]
 }

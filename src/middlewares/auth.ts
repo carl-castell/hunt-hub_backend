@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from "express";
 
 const bypassAuth = process.env.BYPASS_AUTH === "true";
 
+   export const requireAuth = requireLogin;
+
+
 export function requireLogin(req: Request, res: Response, next: NextFunction) {
   if (bypassAuth) return next();
   if (!req.session.user) {

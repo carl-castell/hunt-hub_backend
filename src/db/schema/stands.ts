@@ -1,12 +1,12 @@
 import { relations } from "drizzle-orm";
 import { integer, pgTable, point, varchar } from "drizzle-orm/pg-core";
-import { territoriesTable } from "./terretories";
+import { territoriesTable } from "./territories";
 import { standsDriveTable, standsGroupTable, standsGuestTable } from "./join_tables";
 
 export const standsTable = pgTable("stands", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     number: varchar().notNull(),
-    territoryId: integer("territorry_id").notNull(),
+    territoryId: integer("territory_id").notNull(),
     location: point(),
 });
 

@@ -20,10 +20,11 @@ export const trainingCertificatesTable = pgTable("training_certificates", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     guestId: integer('guest_id').notNull(),
     checked: boolean().notNull().default(false),
-    issueDate: date("expiry_date").notNull(),
+    issueDate: date("issue_date").notNull(),
     uploadDate: timestamp("upload_date").notNull().defaultNow(),
 });
-export const training_certificatesRelations = relations(trainingCertificatesTable, ({ one }) => ({
+
+export const trainingCertificatesRelations = relations(trainingCertificatesTable, ({ one }) => ({
     guest: one(guestsTable, {
         fields: [trainingCertificatesTable.guestId],
         references: [guestsTable.id],

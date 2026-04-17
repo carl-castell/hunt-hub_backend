@@ -5,7 +5,7 @@ import { standsTable } from "./stands";
 
 
 
-export const territoriesTable = pgTable("territorys", {
+export const territoriesTable = pgTable("territories", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   estateId: integer('estate_id'),
   territoryName: varchar('territory_name',{ length: 255 }).notNull(),

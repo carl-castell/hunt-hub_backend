@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 import { usersTable } from "./users";
 import { guestsTable } from "./guests";
 import { eventsTable } from "./events";
-import { territoriesTable } from "./terretories";
+import { territoriesTable } from "./territories";
 
 
 export const estatesTable = pgTable('estates', {

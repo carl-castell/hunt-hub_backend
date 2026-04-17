@@ -55,6 +55,7 @@ async function main() {
       email: process.env.ADMIN_EMAIL!,
       role: 'admin',
       password: await bcrypt.hash(process.env.ADMIN_PASSWORD!, SALT_ROUNDS),
+      active: true,
     })
     .returning();
   console.log('  Admin user inserted');
