@@ -42,6 +42,14 @@ export async function updateUser(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
+    const [existing] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, Number(id)))
+      .limit(1);
+
+    if (!existing) return res.status(404).send('User not found');
+
     // ── Zod validation ────────────────────────────────────────────────────────
     const result = updateUserSchema.safeParse(req.body);
     if (!result.success) {
@@ -65,6 +73,15 @@ export async function updateUser(req: Request, res: Response) {
 export async function deactivateUser(req: Request, res: Response) {
   try {
     const { id } = req.params;
+
+    const [existing] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, Number(id)))
+      .limit(1);
+
+    if (!existing) return res.status(404).send('User not found');
+
     await db.update(usersTable).set({ active: false }).where(eq(usersTable.id, Number(id)));
     res.redirect(`/users/${id}`);
   } catch (err) {
@@ -89,7 +106,10 @@ export async function deleteUser(req: Request, res: Response) {
     await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
 
     if (sessionUser.role === 'admin') {
-      res.redirect(`/admin/estates/${targetUser.estateId}`);
+      if (targetUser.estateId) {
+        return res.redirect(`/admin/estates/${targetUser.estateId}`);
+      }
+      return res.redirect('/admin');
     } else {
       res.redirect('/manager');
     }
@@ -102,6 +122,14 @@ export async function deleteUser(req: Request, res: Response) {
 export async function resendActivation(req: Request, res: Response) {
   try {
     const { id } = req.params;
+
+    const [existing] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, Number(id)))
+      .limit(1);
+
+    if (!existing) return res.status(404).send('User not found');
 
     await db.delete(userAuthTokensTable).where(eq(userAuthTokensTable.userId, Number(id)));
 
@@ -123,6 +151,15 @@ export async function resendActivation(req: Request, res: Response) {
 export async function reactivateUser(req: Request, res: Response) {
   try {
     const { id } = req.params;
+
+    const [existing] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, Number(id)))
+      .limit(1);
+
+    if (!existing) return res.status(404).send('User not found');
+
     await db.update(usersTable).set({ active: true }).where(eq(usersTable.id, Number(id)));
     res.redirect(`/users/${id}`);
   } catch (err) {
