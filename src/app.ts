@@ -2,6 +2,9 @@ import express, { Express } from "express";
 import path from "path";
 import session from "express-session";
 import ejsLayouts from 'express-ejs-layouts';
+import helmet from 'helmet';
+import connectPg from 'connect-pg-simple';
+import pg from 'pg';
 
 import { logger } from "./middlewares/logger";
 import { requireAdmin, requireManager, requireAuth } from './middlewares/requireRole';
@@ -17,24 +20,44 @@ import { estatesTable } from './db/schema/estates';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 
-
 const app: Express = express();
+const PgStore = connectPg(session);
+
+const sessionPool = new pg.Pool({
+  connectionString: process.env.DB_PROVIDER === 'neon'
+    ? process.env.NEON_DATABASE_URL
+    : process.env.LOCAL_DATABASE_URL,
+  ssl: process.env.DB_PROVIDER === 'neon' ? { rejectUnauthorized: false } : false,
+});
 
 app.set("view engine", "ejs");
 app.set("views", path.join(process.cwd(), "views"));
 app.use(ejsLayouts);
 app.set('layout', 'layout');
 
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "'unsafe-inline'"],
+    },
+  },
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "changeme_secret",
+    store: new PgStore({
+      pool: sessionPool,
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 1000 * 60 * 60 * 2,
     },
   })
@@ -49,7 +72,7 @@ app.use("/admin", requireAdmin, adminRouter);
 
 app.use('/manager', requireManager, async (req, res, next) => {
   res.locals.layout = 'manager/layout';
-  
+
   const [estate] = await db
     .select()
     .from(estatesTable)

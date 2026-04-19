@@ -17,6 +17,7 @@ async function main() {
   // ── Enable PostGIS ─────────────────────────────────────────────────────────
   await db.execute(sql`CREATE EXTENSION IF NOT EXISTS postgis`);
   console.log('> PostGIS extension enabled');
+  
 
   try {
     for (const table of [

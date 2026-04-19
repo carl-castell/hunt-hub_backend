@@ -4,13 +4,13 @@ import bcrypt from 'bcrypt';
 import { db } from '../../db';
 import { usersTable, userAuthTokensTable } from '../../db/schema';
 import { createManagerSchema } from '@/schemas';
+import { renderTemplate, sendMail } from '@/mail';
 
 export async function createManager(req: Request, res: Response) {
   try {
     // ── Zod validation ────────────────────────────────────────────────────────
     const result = createManagerSchema.safeParse(req.body);
     if (!result.success) {
-      // Redirect back with error — or render if you have a form page
       return res.status(400).send(result.error.issues[0].message);
     }
 
@@ -34,12 +34,36 @@ export async function createManager(req: Request, res: Response) {
 
     // Create activation token — expires in 48 hours
     const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 48);
+
     await db.insert(userAuthTokensTable).values({
       userId: newManager.id,
       token,
       type: 'activation',
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 48),
+      expiresAt,
     });
+
+    // Send activation email
+    try {
+      const domain = process.env.DOMAIN ?? 'http://localhost:3000';
+      const activationLink = `${domain}/activate/${token}`;
+
+      const html = await renderTemplate('activation', {
+        firstName,
+        activationLink,
+        year: new Date().getFullYear(),
+        expiresAt,
+      });
+
+      await sendMail({
+        to: email,
+        subject: 'Activate your Hunt Hub account',
+        html,
+      });
+    } catch (emailErr) {
+      console.error('[email error] Failed to send activation email:', emailErr);
+      // User and token are already created — just log the error and continue
+    }
 
     res.redirect(`/admin/estates/${estateId}`);
   } catch (err) {

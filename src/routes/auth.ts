@@ -15,7 +15,6 @@ authRouter.get('/login', (req: Request, res: Response) => {
 
 // POST /login
 authRouter.post('/login', async (req: Request, res: Response) => {
-  // ── Zod validation ──────────────────────────────────────────────────────────
   const result = loginSchema.safeParse(req.body);
   if (!result.success) {
     return res.render('login', {
@@ -61,7 +60,14 @@ authRouter.post('/login', async (req: Request, res: Response) => {
       estateId:  user.estateId ?? null,
     };
 
-    return redirectByRole(req, res);
+    req.session.save((err) => {
+      if (err) {
+        console.error('[session save error]', err);
+        return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Something went wrong. Please try again.' });
+      }
+      return redirectByRole(req, res);
+    });
+
   } catch (err) {
     console.error('[login error]', err);
     return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Something went wrong. Please try again.' });
