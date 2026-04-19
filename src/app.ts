@@ -21,6 +21,7 @@ import { db } from './db';
 import { eq } from 'drizzle-orm';
 
 const app: Express = express();
+app.set('trust proxy', 1);
 const PgStore = connectPg(session);
 
 const sessionPool = new pg.Pool({
