@@ -21,7 +21,7 @@ import { eq } from 'drizzle-orm';
 const app: Express = express();
 
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "../views"));
+app.set("views", path.join(process.cwd(), "views"));
 app.use(ejsLayouts);
 app.set('layout', 'layout');
 
@@ -41,7 +41,7 @@ app.use(
 );
 
 app.use(logger);
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(process.cwd(), "public")));
 
 app.use("/", homeRouter);
 app.use("/", authRouter);
