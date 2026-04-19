@@ -1,5 +1,4 @@
 import express, { Express } from "express";
-import dotenv from "dotenv";
 import path from "path";
 import session from "express-session";
 import ejsLayouts from 'express-ejs-layouts';
@@ -18,8 +17,6 @@ import { estatesTable } from './db/schema/estates';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 
-
-dotenv.config();
 
 const app: Express = express();
 

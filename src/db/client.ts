@@ -1,5 +1,6 @@
-// src/db/index.ts (or src/db/client.ts)
-import 'dotenv/config';
+console.log('DB_PROVIDER:', process.env.DB_PROVIDER);
+console.log('NEON_DATABASE_URL:', process.env.NEON_DATABASE_URL ? 'SET' : 'NOT SET');
+
 import * as schema from './schema';
 
 // Local (Docker) client: node-postgres
@@ -10,7 +11,11 @@ import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { neon } from '@neondatabase/serverless';
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
 
+console.log('DB_PROVIDER:', process.env.DB_PROVIDER);
+console.log('NEON_DATABASE_URL:', process.env.NEON_DATABASE_URL ? 'SET' : 'NOT SET');
+
 const provider = process.env.DB_PROVIDER ?? 'local';
+
 
 let db:
   | ReturnType<typeof drizzlePg>
