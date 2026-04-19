@@ -11,8 +11,8 @@ export const eventsTable = pgTable("events", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   estateId: integer('estate_id'),
   eventName: varchar('event_name',{ length: 255 }).notNull(),
-  date: date(),
-  time: time(),
+  date: date().notNull(),
+  time: time().notNull(),
 
 });
 

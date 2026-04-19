@@ -1,0 +1,55 @@
+<h2>Dashboard</h2>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+
+  <!-- Manage Estate -->
+  <article>
+    <header><strong>Estate</strong></header>
+    <p>Manage your estate settings, areas and team.</p>
+    <a href="/manager/estate" role="button">Manage Estate</a>
+  </article>
+
+  <!-- Areas -->
+  <article>
+    <header><strong>Areas</strong></header>
+    <% if (areas.length === 0) { %>
+      <p>No areas found. Add one from the estate page.</p>
+    <% } else { %>
+      <ul style="padding: 0; list-style: none;">
+        <% areas.forEach(area => { %>
+          <li style="margin-bottom: 0.5rem;">
+            <a href="/manager/areas/<%= area.id %>"><%= area.name %></a>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </article>
+
+  <!-- Upcoming Events -->
+  <article>
+    <header><strong>Upcoming Events</strong></header>
+    <% if (futureEvents.length === 0) { %>
+      <p>No upcoming events.</p>
+    <% } else { %>
+      <ul style="padding: 0; list-style: none;">
+        <% futureEvents.forEach(event => { %>
+          <li style="margin-bottom: 0.5rem;">
+            <a href="/manager/events/<%= event.id %>">
+              <%= new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+              — <%= event.eventName %>
+            </a>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <a href="/manager/events" role="button" class="outline" style="margin-top: 1rem;">View All Events</a>
+  </article>
+
+</div>
+
+<!-- Quick nav -->
+<div style="display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;">
+  <a href="/manager/guests" role="button" class="outline">Guests</a>
+  <a href="/manager/people" role="button" class="outline">People</a>
+  <a href="/manager/events" role="button" class="outline">Events</a>
+</div>

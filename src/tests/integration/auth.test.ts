@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import app from '@/app';
 import { db } from '@/db';
-import { usersTable } from '@/db/schema';
+import { usersTable, estatesTable } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 
@@ -13,22 +13,34 @@ describe('Auth Integration Tests', () => {
     hashedPassword: '',
   };
 
-  beforeAll(async () => {
-    testUser.hashedPassword = await bcrypt.hash(testUser.password, 10);
-    await db.insert(usersTable).values({
-      firstName: 'Test',
-      lastName:  'User',
-      email:     testUser.email,
-      password:  testUser.hashedPassword,
-      role:      'manager',
-      active:    true,
-      estateId:  1,
-    });
-  });
+let testEstateId: number;
 
-  afterAll(async () => {
-    await db.delete(usersTable).where(eq(usersTable.email, testUser.email));
+beforeAll(async () => {
+  testUser.hashedPassword = await bcrypt.hash(testUser.password, 10);
+
+  const [estate] = await db
+    .insert(estatesTable)
+    .values({ name: 'Test Estate' })
+    .returning();
+
+  testEstateId = estate.id;
+
+  await db.insert(usersTable).values({
+    firstName: 'Test',
+    lastName:  'User',
+    email:     testUser.email,
+    password:  testUser.hashedPassword,
+    role:      'manager',
+    active:    true,
+    estateId:  testEstateId,
   });
+});
+
+afterAll(async () => {
+  await db.delete(usersTable).where(eq(usersTable.email, testUser.email));
+  await db.delete(estatesTable).where(eq(estatesTable.id, testEstateId));
+});
+
 
   // ── POST /login ────────────────────────────────────────────────────────────
 
@@ -142,11 +154,15 @@ describe('Auth Integration Tests', () => {
     it('should allow authenticated manager to access /manager', async () => {
       const agent = request.agent(app);
 
-      await agent
+      const loginRes = await agent
         .post('/login')
         .send({ email: testUser.email, password: testUser.password });
 
+      console.log('LOGIN STATUS:', loginRes.status);
+      console.log('LOGIN REDIRECT:', loginRes.headers.location);
+
       const res = await agent.get('/manager');
+      console.log('MANAGER BODY:', res.text);
 
       expect(res.status).toBe(200);
     });

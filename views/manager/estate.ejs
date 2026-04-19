@@ -1,0 +1,65 @@
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+  <h2 style="margin: 0;"><%= estate.name %></h2>
+  <button class="outline" onclick="document.getElementById('rename-estate-dialog').showModal()">Edit</button>
+</div>
+
+<div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+  <a href="/manager/people" role="button" class="outline">People</a>
+</div>
+
+<!-- Areas List -->
+<section>
+  <h3>Areas</h3>
+  <% if (areas.length === 0) { %>
+    <p>No areas yet.</p>
+  <% } else { %>
+    <ul style="list-style: none; padding: 0;">
+      <% areas.forEach(area => { %>
+        <li style="margin-bottom: 0.5rem;">
+          <a href="/manager/areas/<%= area.id %>"><%= area.name %></a>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+  <button class="outline" style="margin-top: 1rem;" onclick="document.getElementById('create-area-dialog').showModal()">
+    + New Area
+  </button>
+</section>
+
+<!-- ── Rename Estate Dialog ───────────────────────────────────────────────── -->
+<dialog id="rename-estate-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" onclick="document.getElementById('rename-estate-dialog').close()"></button>
+      <h3>Rename Estate</h3>
+    </header>
+    <form action="/manager/estate/rename" method="POST">
+      <label>
+        Estate Name
+        <input type="text" name="name" value="<%= estate.name %>" required maxlength="256" />
+      </label>
+      <footer>
+        <button type="submit">Save</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- ── Create Area Dialog ─────────────────────────────────────────────────── -->
+<dialog id="create-area-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" onclick="document.getElementById('create-area-dialog').close()"></button>
+      <h3>New Area</h3>
+    </header>
+    <form action="/manager/areas" method="POST">
+      <label>
+        Area Name
+        <input type="text" name="name" placeholder="e.g. North Forest" required maxlength="255" />
+      </label>
+      <footer>
+        <button type="submit">Create</button>
+      </footer>
+    </form>
+  </article>
+</dialog>

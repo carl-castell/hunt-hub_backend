@@ -1,0 +1,77 @@
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+  <h2 style="margin: 0;"><%= guest.firstName %> <%= guest.lastName %></h2>
+  <button class="outline" onclick="document.getElementById('edit-guest-dialog').showModal()">Edit</button>
+  <button class="secondary outline" onclick="document.getElementById('delete-guest-dialog').showModal()">Delete</button>
+</div>
+
+<a href="/manager/guests" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Back to Guests</a>
+
+<!-- ── Guest Info ─────────────────────────────────────────────────────────── -->
+<article>
+  <dl>
+    <dt>First Name</dt>
+    <dd><%= guest.firstName %></dd>
+
+    <dt>Last Name</dt>
+    <dd><%= guest.lastName %></dd>
+
+    <dt>Email</dt>
+    <dd><%= guest.email %></dd>
+
+    <dt>Phone</dt>
+    <dd><%= guest.phone %></dd>
+  </dl>
+</article>
+
+<!-- ── Edit Guest Dialog ──────────────────────────────────────────────────── -->
+<dialog id="edit-guest-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" onclick="document.getElementById('edit-guest-dialog').close()"></button>
+      <h3>Edit Guest</h3>
+    </header>
+    <form action="/manager/guests/<%= guest.id %>/update" method="POST">
+      <label>
+        First Name
+        <input type="text" name="firstName" value="<%= guest.firstName %>" required maxlength="255" />
+      </label>
+      <label>
+        Last Name
+        <input type="text" name="lastName" value="<%= guest.lastName %>" required maxlength="255" />
+      </label>
+      <label>
+        Email
+        <input type="email" name="email" value="<%= guest.email %>" required maxlength="255" />
+      </label>
+      <label>
+        Phone
+        <input type="text" name="phone" value="<%= guest.phone %>" required maxlength="255" />
+      </label>
+      <footer>
+        <button type="button" class="outline" onclick="document.getElementById('edit-guest-dialog').close()">Cancel</button>
+        <button type="submit">Save</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- ── Delete Guest Dialog ────────────────────────────────────────────────── -->
+<dialog id="delete-guest-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" onclick="document.getElementById('delete-guest-dialog').close()"></button>
+      <h3>Delete Guest</h3>
+    </header>
+    <p>
+      Are you sure you want to permanently delete
+      <strong><%= guest.firstName %> <%= guest.lastName %></strong>?
+      This cannot be undone.
+    </p>
+    <form action="/manager/guests/<%= guest.id %>/delete" method="POST">
+      <footer>
+        <button type="button" class="outline" onclick="document.getElementById('delete-guest-dialog').close()">Cancel</button>
+        <button type="submit" class="contrast">Delete</button>
+      </footer>
+    </form>
+  </article>
+</dialog>

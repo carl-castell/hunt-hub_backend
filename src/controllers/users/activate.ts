@@ -15,10 +15,10 @@ export async function getActivate(req: Request, res: Response) {
       .where(eq(userAuthTokensTable.token, token))
       .limit(1);
 
-    if (!authToken) return res.render('activate', { error: 'Invalid or expired activation link.', token });
-    if (authToken.expiresAt < new Date()) return res.render('activate', { error: 'This activation link has expired.', token });
+    if (!authToken) return res.render('activate', { layout: false, error: 'Invalid or expired activation link.', token });
+    if (authToken.expiresAt < new Date()) return res.render('activate', { layout: false, error: 'This activation link has expired.', token });
 
-    res.render('activate', { error: null, token });
+    res.render('activate', { layout: false, error: null, token });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -33,6 +33,7 @@ export async function postActivate(req: Request, res: Response) {
     const result = activateSchema.safeParse(req.body);
     if (!result.success) {
       return res.render('activate', {
+        layout: false,
         error: result.error.issues[0].message,
         token,
       });
@@ -46,8 +47,8 @@ export async function postActivate(req: Request, res: Response) {
       .where(eq(userAuthTokensTable.token, token))
       .limit(1);
 
-    if (!authToken) return res.render('activate', { error: 'Invalid or expired activation link.', token });
-    if (authToken.expiresAt < new Date()) return res.render('activate', { error: 'This activation link has expired.', token });
+    if (!authToken) return res.render('activate', { layout: false, error: 'Invalid or expired activation link.', token });
+    if (authToken.expiresAt < new Date()) return res.render('activate', { layout: false, error: 'This activation link has expired.', token });
 
     // Hash new password and activate user
     const hashedPassword = await bcrypt.hash(password, 10);

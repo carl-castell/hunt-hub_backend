@@ -1,0 +1,30 @@
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+  <h2 style="margin: 0;">Add Guest</h2>
+  <a href="/manager/guests" role="button" class="outline">Back to Guests</a>
+</div>
+
+<% if (error) { %>
+  <div class="alert alert-error"><%= error %></div>
+<% } %>
+
+<article style="max-width: 600px;">
+  <form method="POST" action="/manager/guests">
+    <label>
+      First Name
+      <input type="text" name="firstName" required />
+    </label>
+    <label>
+      Last Name
+      <input type="text" name="lastName" required />
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" required />
+    </label>
+    <label>
+      Phone
+      <input type="text" name="phone" required />
+    </label>
+    <button type="submit">Add Guest</button>
+  </form>
+</article>

@@ -1,0 +1,56 @@
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+  <h2 style="margin: 0;"><%= area.name %></h2>
+  <button class="outline" onclick="document.getElementById('rename-area-dialog').showModal()">Edit</button>
+  <button class="secondary outline" onclick="document.getElementById('delete-area-dialog').showModal()">Delete</button>
+</div>
+
+<a href="/manager/estate" role="button" class="outline">← Back to Estate</a>
+
+<!-- ── Rename Area Dialog ──────────────────────────────────────────────────── -->
+<dialog id="rename-area-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" onclick="document.getElementById('rename-area-dialog').close()"></button>
+      <h3>Rename Area</h3>
+    </header>
+    <form action="/manager/areas/<%= area.id %>/rename" method="POST">
+      <label>
+        Area Name
+        <input type="text" name="name" value="<%= area.name %>" required maxlength="255" />
+      </label>
+      <footer>
+        <button type="submit">Save</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- ── Delete Area Dialog ─────────────────────────────────────────────────── -->
+<dialog id="delete-area-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" onclick="document.getElementById('delete-area-dialog').close()"></button>
+      <h3>Delete Area</h3>
+    </header>
+    <p>
+      ⚠️ Deleting <strong><%= area.name %></strong> will also permanently delete
+      all stands within this area. This cannot be undone.
+    </p>
+    <p>To confirm, type the area name below:</p>
+    <form action="/manager/areas/<%= area.id %>/delete" method="POST">
+      <label>
+        <input
+          type="text"
+          name="confirm"
+          placeholder="<%= area.name %>"
+          required
+          autocomplete="off"
+        />
+      </label>
+      <footer>
+        <button type="button" class="outline" onclick="document.getElementById('delete-area-dialog').close()">Cancel</button>
+        <button type="submit" class="contrast">Delete</button>
+      </footer>
+    </form>
+  </article>
+</dialog>

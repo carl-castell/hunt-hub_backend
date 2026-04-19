@@ -10,7 +10,7 @@ const authRouter: Router = express.Router();
 // GET /login
 authRouter.get('/login', (req: Request, res: Response) => {
   if (req.session.user) return redirectByRole(req, res);
-  res.render('login', { title: 'Hunt-Hub | Login', error: null });
+  res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: null });
 });
 
 // POST /login
@@ -19,6 +19,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
   const result = loginSchema.safeParse(req.body);
   if (!result.success) {
     return res.render('login', {
+      layout: false,
       title: 'Hunt-Hub | Login',
       error: result.error.issues[0].message,
     });
@@ -34,11 +35,12 @@ authRouter.post('/login', async (req: Request, res: Response) => {
       .limit(1);
 
     if (!user || !user.password) {
-      return res.render('login', { title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
+      return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
     }
 
     if (!user.active) {
       return res.render('login', {
+        layout: false,
         title: 'Hunt-Hub | Login',
         error: 'Your account is inactive. Please reach out to management or an admin.',
       });
@@ -46,7 +48,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      return res.render('login', { title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
+      return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
     }
 
     req.session.user = {
@@ -62,7 +64,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     return redirectByRole(req, res);
   } catch (err) {
     console.error('[login error]', err);
-    return res.render('login', { title: 'Hunt-Hub | Login', error: 'Something went wrong. Please try again.' });
+    return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Something went wrong. Please try again.' });
   }
 });
 

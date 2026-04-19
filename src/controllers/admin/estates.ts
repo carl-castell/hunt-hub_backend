@@ -42,7 +42,12 @@ export async function getEstate(req: Request, res: Response) {
       .from(usersTable)
       .where(eq(usersTable.estateId, Number(id)));
 
-    res.render('admin/estate', { user, estate, managers });
+    res.render('admin/estate', {
+      layout: false,
+      user,
+      estate,
+      managers
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

@@ -1,0 +1,128 @@
+<% if (error) { %>
+  <article style="border-left: 4px solid var(--pico-color-red-500); padding: 1rem; margin-bottom: 1.5rem;">
+    <p style="margin: 0;"><%= error %></p>
+  </article>
+<% } %>
+
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+  <h2 style="margin: 0;"><%= targetUser.firstName %> <%= targetUser.lastName %></h2>
+  <button class="outline" onclick="document.getElementById('edit-role-dialog').showModal()">Edit Role</button>
+  <button class="secondary outline" onclick="document.getElementById('delete-user-dialog').showModal()">Delete</button>
+</div>
+
+<a href="/manager/people" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Back to People</a>
+
+<!-- ── User Info ──────────────────────────────────────────────────────────── -->
+<article>
+  <dl>
+    <dt>First Name</dt>
+    <dd><%= targetUser.firstName %></dd>
+
+    <dt>Last Name</dt>
+    <dd><%= targetUser.lastName %></dd>
+
+    <dt>Email</dt>
+    <dd><%= targetUser.email %></dd>
+
+    <dt>Role</dt>
+    <dd style="text-transform: capitalize;"><%= targetUser.role %></dd>
+
+    <dt>Status</dt>
+    <dd><%= targetUser.active ? 'Active' : 'Inactive' %></dd>
+  </dl>
+</article>
+
+<% if (targetUser.id !== user.id) { %>
+
+<!-- ── Activation Link ────────────────────────────────────────────────────── -->
+<article>
+  <header><strong>Activation Link</strong></header>
+  <% if (activationToken) { %>
+    <p>Share this link with the user to activate their account:</p>
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+      <input
+        type="text"
+        id="activation-link"
+        value="<%= domain %>/activate/<%= activationToken %>"
+        readonly
+        style="flex: 1;"
+      />
+      <button
+        type="button"
+        class="outline"
+        onclick="navigator.clipboard.writeText(document.getElementById('activation-link').value).then(() => this.textContent = 'Copied!').catch(() => this.textContent = 'Failed')"
+      >
+        Copy
+      </button>
+    </div>
+    <form action="/manager/people/<%= targetUser.id %>/resend-activation" method="POST" style="margin-top: 0.75rem;">
+      <button type="submit" class="outline">Regenerate Link</button>
+    </form>
+  <% } else { %>
+    <p>No pending activation token.</p>
+    <form action="/manager/people/<%= targetUser.id %>/resend-activation" method="POST">
+      <button type="submit" class="outline">Generate Activation Link</button>
+    </form>
+  <% } %>
+</article>
+
+<!-- ── Activate / Deactivate ─────────────────────────────────────────────── -->
+<article>
+  <header><strong>Account Status</strong></header>
+  <% if (targetUser.active) { %>
+    <form action="/manager/people/<%= targetUser.id %>/deactivate" method="POST">
+      <button type="submit" class="secondary outline">Deactivate Account</button>
+    </form>
+  <% } else { %>
+    <form action="/manager/people/<%= targetUser.id %>/reactivate" method="POST">
+      <button type="submit" class="outline">Reactivate Account</button>
+    </form>
+  <% } %>
+</article>
+
+<% } %>
+
+
+<!-- ── Edit Role Dialog ───────────────────────────────────────────────────── -->
+<dialog id="edit-role-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" onclick="document.getElementById('edit-role-dialog').close()"></button>
+      <h3>Edit Role</h3>
+    </header>
+    <form action="/manager/people/<%= targetUser.id %>/role" method="POST">
+      <label>
+        Role
+        <select name="role" required>
+          <option value="staff" <%= targetUser.role === 'staff' ? 'selected' : '' %>>Staff</option>
+          <option value="manager" <%= targetUser.role === 'manager' ? 'selected' : '' %>>Manager</option>
+        </select>
+      </label>
+      <footer>
+        <button type="button" class="outline" onclick="document.getElementById('edit-role-dialog').close()">Cancel</button>
+        <button type="submit">Save</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- ── Delete User Dialog ─────────────────────────────────────────────────── -->
+<dialog id="delete-user-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" onclick="document.getElementById('delete-user-dialog').close()"></button>
+      <h3>Delete User</h3>
+    </header>
+    <p>
+      Are you sure you want to permanently delete
+      <strong><%= targetUser.firstName %> <%= targetUser.lastName %></strong>?
+      This cannot be undone.
+    </p>
+    <form action="/manager/people/<%= targetUser.id %>/delete" method="POST">
+      <footer>
+        <button type="button" class="outline" onclick="document.getElementById('delete-user-dialog').close()">Cancel</button>
+        <button type="submit" class="contrast">Delete</button>
+      </footer>
+    </form>
+  </article>
+</dialog>

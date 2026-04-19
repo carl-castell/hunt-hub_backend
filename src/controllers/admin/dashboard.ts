@@ -8,7 +8,11 @@ export async function getDashboard(req: Request, res: Response) {
     const user = req.session.user;
 
     const estates = await db.select().from(estatesTable);
-    res.render('admin/admin-dashboard', { user, estates });
+    res.render('admin/admin-dashboard', {
+      layout: false,
+      user,
+      estates
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
