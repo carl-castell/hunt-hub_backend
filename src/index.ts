@@ -3,8 +3,9 @@ dotenv.config();
 
 import app from './app';
 
+const domain = process.env.DOMAIN || 'http://localhost:3000';
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
-  console.log(`[server]: Server is running at http://localhost:${port}`);
+  console.log(`[server]: Server is running at ${domain}`);
 });

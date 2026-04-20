@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable, userAuthTokensTable } from '../../db/schema';
 import { activateSchema } from '@/schemas';
+import { audit } from '@/audit';
 
 export async function getActivate(req: Request, res: Response) {
   try {
@@ -29,7 +30,6 @@ export async function postActivate(req: Request, res: Response) {
   try {
     const { token } = req.params;
 
-    // ── Zod validation ────────────────────────────────────────────────────────
     const result = activateSchema.safeParse(req.body);
     if (!result.success) {
       return res.render('activate', {
@@ -61,6 +61,12 @@ export async function postActivate(req: Request, res: Response) {
     await db
       .delete(userAuthTokensTable)
       .where(eq(userAuthTokensTable.id, authToken.id));
+
+    await audit({
+      userId: authToken.userId,
+      event: 'account_activated',
+      ip: req.ip,
+    });
 
     res.redirect('/login');
   } catch (err) {

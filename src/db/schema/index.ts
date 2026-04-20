@@ -10,3 +10,5 @@ export * from './licenses';
 export * from './stands';
 export * from './areas';
 export * from './user_auth_tokens';
+export * from './audit_logs';
+

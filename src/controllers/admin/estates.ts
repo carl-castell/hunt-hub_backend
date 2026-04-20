@@ -3,10 +3,10 @@ import { db } from '../../db';
 import { estatesTable, usersTable } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { createEstateSchema, renameEstateSchema } from '@/schemas';
+import { audit } from '@/audit';
 
 export async function createEstate(req: Request, res: Response) {
   try {
-    // ── Zod validation ────────────────────────────────────────────────────────
     const result = createEstateSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).send(result.error.issues[0].message);
@@ -16,6 +16,13 @@ export async function createEstate(req: Request, res: Response) {
       .insert(estatesTable)
       .values({ name: result.data.name })
       .returning();
+
+    await audit({
+      userId: req.session.user!.id,
+      event: 'estate_created',
+      ip: req.ip,
+      metadata: { estateId: newEstate.id, name: newEstate.name },
+    });
 
     res.redirect(`/admin/estates/${newEstate.id}`);
   } catch (err) {
@@ -46,7 +53,7 @@ export async function getEstate(req: Request, res: Response) {
       layout: false,
       user,
       estate,
-      managers
+      managers,
     });
   } catch (err) {
     console.error(err);
@@ -58,7 +65,6 @@ export async function renameEstate(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    // ── Zod validation ────────────────────────────────────────────────────────
     const result = renameEstateSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).send(result.error.issues[0].message);
@@ -79,7 +85,16 @@ export async function renameEstate(req: Request, res: Response) {
 export async function deleteEstate(req: Request, res: Response) {
   try {
     const { id } = req.params;
+
     await db.delete(estatesTable).where(eq(estatesTable.id, Number(id)));
+
+    await audit({
+      userId: req.session.user!.id,
+      event: 'estate_deleted',
+      ip: req.ip,
+      metadata: { estateId: Number(id) },
+    });
+
     res.redirect('/admin');
   } catch (err) {
     console.error(err);

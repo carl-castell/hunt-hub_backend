@@ -5,6 +5,7 @@ import { db } from '../db';
 import { usersTable } from '../db/schema/users';
 import { loginSchema } from '../schemas';
 import { authLimiter } from '@/middlewares/rateLimiter';
+import { audit } from '@/audit';
 
 const authRouter: Router = express.Router();
 
@@ -35,10 +36,12 @@ authRouter.post('/login', authLimiter, async (req: Request, res: Response) => {
       .limit(1);
 
     if (!user || !user.password) {
+      await audit({ event: 'failed_login', ip: req.ip, metadata: { email } });
       return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
     }
 
     if (!user.active) {
+      await audit({ event: 'failed_login', ip: req.ip, metadata: { email, reason: 'inactive account' } });
       return res.render('login', {
         layout: false,
         title: 'Hunt-Hub | Login',
@@ -48,6 +51,7 @@ authRouter.post('/login', authLimiter, async (req: Request, res: Response) => {
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
+      await audit({ event: 'failed_login', ip: req.ip, metadata: { email } });
       return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
     }
 
@@ -61,11 +65,12 @@ authRouter.post('/login', authLimiter, async (req: Request, res: Response) => {
       estateId:  user.estateId ?? null,
     };
 
-    req.session.save((err) => {
+    req.session.save(async (err) => {
       if (err) {
         console.error('[session save error]', err);
         return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Something went wrong. Please try again.' });
       }
+      await audit({ userId: user.id, event: 'login', ip: req.ip });
       return redirectByRole(req, res);
     });
 
@@ -76,8 +81,13 @@ authRouter.post('/login', authLimiter, async (req: Request, res: Response) => {
 });
 
 // POST /logout
-authRouter.post('/logout', (req: Request, res: Response) => {
-  req.session.destroy(() => res.redirect('/login'));
+authRouter.post('/logout', async (req: Request, res: Response) => {
+  const userId = req.session.user?.id;
+  const ip = req.ip;
+  req.session.destroy(async () => {
+    await audit({ userId, event: 'logout', ip });
+    res.redirect('/login');
+  });
 });
 
 function redirectByRole(req: Request, res: Response) {

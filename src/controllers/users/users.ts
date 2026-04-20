@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable, userAuthTokensTable } from '../../db/schema';
 import { updateUserSchema } from '@/schemas';
+import { audit } from '@/audit';
 
 export async function getUser(req: Request, res: Response) {
   try {
@@ -51,7 +52,6 @@ export async function updateUser(req: Request, res: Response) {
 
     if (!existing) return res.status(404).send('User not found');
 
-    // ── Zod validation ────────────────────────────────────────────────────────
     const result = updateUserSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).send(result.error.issues[0].message);
@@ -74,6 +74,7 @@ export async function updateUser(req: Request, res: Response) {
 export async function deactivateUser(req: Request, res: Response) {
   try {
     const { id } = req.params;
+    const sessionUser = req.session.user!;
 
     const [existing] = await db
       .select()
@@ -84,6 +85,14 @@ export async function deactivateUser(req: Request, res: Response) {
     if (!existing) return res.status(404).send('User not found');
 
     await db.update(usersTable).set({ active: false }).where(eq(usersTable.id, Number(id)));
+
+    await audit({
+      userId: sessionUser.id,
+      event: 'user_deactivated',
+      ip: req.ip,
+      metadata: { targetUserId: Number(id) },
+    });
+
     res.redirect(`/users/${id}`);
   } catch (err) {
     console.error(err);
@@ -106,6 +115,13 @@ export async function deleteUser(req: Request, res: Response) {
 
     await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
 
+    await audit({
+      userId: sessionUser.id,
+      event: 'user_deleted',
+      ip: req.ip,
+      metadata: { targetUserId: Number(id), email: targetUser.email },
+    });
+
     if (sessionUser.role === 'admin') {
       if (targetUser.estateId) {
         return res.redirect(`/admin/estates/${targetUser.estateId}`);
@@ -123,6 +139,7 @@ export async function deleteUser(req: Request, res: Response) {
 export async function resendActivation(req: Request, res: Response) {
   try {
     const { id } = req.params;
+    const sessionUser = req.session.user!;
 
     const [existing] = await db
       .select()
@@ -142,6 +159,13 @@ export async function resendActivation(req: Request, res: Response) {
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 48),
     });
 
+    await audit({
+      userId: sessionUser.id,
+      event: 'user_created',
+      ip: req.ip,
+      metadata: { targetUserId: Number(id) },
+    });
+
     res.redirect(`/users/${id}`);
   } catch (err) {
     console.error(err);
@@ -152,6 +176,7 @@ export async function resendActivation(req: Request, res: Response) {
 export async function reactivateUser(req: Request, res: Response) {
   try {
     const { id } = req.params;
+    const sessionUser = req.session.user!;
 
     const [existing] = await db
       .select()
@@ -162,6 +187,14 @@ export async function reactivateUser(req: Request, res: Response) {
     if (!existing) return res.status(404).send('User not found');
 
     await db.update(usersTable).set({ active: true }).where(eq(usersTable.id, Number(id)));
+
+    await audit({
+      userId: sessionUser.id,
+      event: 'user_reactivated',
+      ip: req.ip,
+      metadata: { targetUserId: Number(id) },
+    });
+
     res.redirect(`/users/${id}`);
   } catch (err) {
     console.error(err);

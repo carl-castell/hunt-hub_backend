@@ -15,4 +15,5 @@ export default defineConfig({
   dialect: 'postgresql',
   dbCredentials: { url },
   extensionsFilters: ['postgis'],
+  tablesFilter: ['!session'],
 });
