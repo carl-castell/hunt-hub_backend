@@ -1,49 +1,30 @@
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
   <h2 style="margin: 0;">Guests</h2>
-  <button onclick="document.getElementById('add-guest-dialog').showModal()">Add Guest</button>
+  <button data-dialog="add-guest-dialog">Add Guest</button>
 </div>
 
-<!-- ── Add Guest Dialog ───────────────────────────────────────────────────── -->
 <dialog id="add-guest-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('add-guest-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="add-guest-dialog"></button>
       <h3>Add Guest</h3>
     </header>
     <form method="POST" action="/manager/guests">
-      <label>
-        First Name
-        <input type="text" name="firstName" required />
-      </label>
-      <label>
-        Last Name
-        <input type="text" name="lastName" required />
-      </label>
-      <label>
-        Email
-        <input type="email" name="email" required />
-      </label>
-      <label>
-        Phone
-        <input type="text" name="phone" required />
-      </label>
+      <label>First Name<input type="text" name="firstName" required /></label>
+      <label>Last Name<input type="text" name="lastName" required /></label>
+      <label>Email<input type="email" name="email" required /></label>
+      <label>Phone<input type="text" name="phone" required /></label>
       <footer>
-        <button type="button" class="outline" onclick="document.getElementById('add-guest-dialog').close()">Cancel</button>
+        <button type="button" class="outline" data-close-dialog="add-guest-dialog">Cancel</button>
         <button type="submit">Add Guest</button>
       </footer>
     </form>
   </article>
 </dialog>
 
-<!-- ── Filters ────────────────────────────────────────────────────────────── -->
+<!-- Filters -->
 <form method="GET" action="/manager/guests" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
-  <input
-    type="text"
-    name="search"
-    placeholder="Search guests..."
-    value="<%= search %>"
-    style="flex: 1; min-width: 200px;"
-  />
+  <input type="text" name="search" placeholder="Search guests..." value="<%= search %>" style="flex: 1; min-width: 200px;" />
   <select name="sortBy">
     <option value="" <%= sortBy === '' ? 'selected' : '' %>>Sort by...</option>
     <option value="firstName" <%= sortBy === 'firstName' ? 'selected' : '' %>>First Name</option>
@@ -53,26 +34,17 @@
   <a href="/manager/guests" role="button" class="outline">Clear</a>
 </form>
 
-<!-- ── Guests Table ───────────────────────────────────────────────────────── -->
 <% if (guests.length === 0) { %>
   <p>No guests found.</p>
 <% } else { %>
   <figure>
     <table>
       <thead>
-        <tr>
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>Email</th>
-          <th>Phone</th>
-        </tr>
+        <tr><th>First Name</th><th>Last Name</th><th>Email</th><th>Phone</th></tr>
       </thead>
       <tbody>
         <% guests.forEach(guest => { %>
-          <tr
-            style="cursor: pointer;"
-            onclick="window.location='/manager/guests/<%= guest.id %>'"
-          >
+          <tr style="cursor: pointer;" data-href="/manager/guests/<%= guest.id %>">
             <td><%= guest.firstName %></td>
             <td><%= guest.lastName %></td>
             <td><%= guest.email %></td>

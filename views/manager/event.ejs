@@ -1,7 +1,7 @@
 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
   <h2 style="margin: 0;"><%= event.eventName %></h2>
-  <button class="outline" onclick="document.getElementById('edit-event-dialog').showModal()">Edit</button>
-  <button class="secondary outline" onclick="document.getElementById('delete-event-dialog').showModal()">Delete</button>
+  <button class="outline" data-dialog="edit-event-dialog">Edit</button>
+  <button class="secondary outline" data-dialog="delete-event-dialog">Delete</button>
 </div>
 
 <a href="/manager/events" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Back to Events</a>
@@ -26,7 +26,7 @@
 <dialog id="edit-event-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('edit-event-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="edit-event-dialog"></button>
       <h3>Edit Event</h3>
     </header>
     <form action="/manager/events/<%= event.id %>/update" method="POST">
@@ -43,7 +43,7 @@
         <input type="time" name="time" value="<%= event.time %>" required />
       </label>
       <footer>
-        <button type="button" class="outline" onclick="document.getElementById('edit-event-dialog').close()">Cancel</button>
+        <button type="button" class="outline" data-close-dialog="edit-event-dialog">Cancel</button>
         <button type="submit">Save</button>
       </footer>
     </form>
@@ -54,7 +54,7 @@
 <dialog id="delete-event-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('delete-event-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="delete-event-dialog"></button>
       <h3>Delete Event</h3>
     </header>
     <p>
@@ -64,7 +64,7 @@
     </p>
     <form action="/manager/events/<%= event.id %>/delete" method="POST">
       <footer>
-        <button type="button" class="outline" onclick="document.getElementById('delete-event-dialog').close()">Cancel</button>
+        <button type="button" class="outline" data-close-dialog="delete-event-dialog">Cancel</button>
         <button type="submit" class="contrast">Delete</button>
       </footer>
     </form>

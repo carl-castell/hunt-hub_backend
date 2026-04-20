@@ -1,6 +1,6 @@
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
   <h2 style="margin: 0;">Events</h2>
-  <button onclick="document.getElementById('create-event-dialog').showModal()">+ New Event</button>
+  <button data-dialog="create-event-dialog">+ New Event</button>
 </div>
 
 <!-- ── Upcoming Events ────────────────────────────────────────────────────── -->
@@ -19,10 +19,7 @@
         </thead>
         <tbody>
           <% upcomingEvents.forEach(event => { %>
-            <tr
-              style="cursor: pointer;"
-              onclick="window.location='/manager/events/<%= event.id %>'"
-            >
+            <tr style="cursor: pointer;" data-href="/manager/events/<%= event.id %>">
               <td>
                 <%= new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) %>
               </td>
@@ -51,10 +48,7 @@
         </thead>
         <tbody>
           <% pastEvents.forEach(event => { %>
-            <tr
-              style="cursor: pointer;"
-              onclick="window.location='/manager/events/<%= event.id %>'"
-            >
+            <tr style="cursor: pointer;" data-href="/manager/events/<%= event.id %>">
               <td>
                 <%= new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) %>
               </td>
@@ -71,7 +65,7 @@
 <dialog id="create-event-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('create-event-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="create-event-dialog"></button>
       <h3>New Event</h3>
     </header>
     <form action="/manager/events" method="POST">
@@ -88,7 +82,7 @@
         <input type="time" name="time" required />
       </label>
       <footer>
-        <button type="button" class="outline" onclick="document.getElementById('create-event-dialog').close()">Cancel</button>
+        <button type="button" class="outline" data-close-dialog="create-event-dialog">Cancel</button>
         <button type="submit">Create</button>
       </footer>
     </form>

@@ -1,16 +1,16 @@
 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
   <h2 style="margin: 0;"><%= area.name %></h2>
-  <button class="outline" onclick="document.getElementById('rename-area-dialog').showModal()">Edit</button>
-  <button class="secondary outline" onclick="document.getElementById('delete-area-dialog').showModal()">Delete</button>
+  <button class="outline" data-dialog="rename-area-dialog">Edit</button>
+  <button class="secondary outline" data-dialog="delete-area-dialog">Delete</button>
 </div>
 
 <a href="/manager/estate" role="button" class="outline">← Back to Estate</a>
 
-<!-- ── Rename Area Dialog ──────────────────────────────────────────────────── -->
+<!-- ── Rename Area Dialog ─────────────────────────────────────────────────── -->
 <dialog id="rename-area-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('rename-area-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="rename-area-dialog"></button>
       <h3>Rename Area</h3>
     </header>
     <form action="/manager/areas/<%= area.id %>/rename" method="POST">
@@ -29,7 +29,7 @@
 <dialog id="delete-area-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('delete-area-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="delete-area-dialog"></button>
       <h3>Delete Area</h3>
     </header>
     <p>
@@ -48,7 +48,7 @@
         />
       </label>
       <footer>
-        <button type="button" class="outline" onclick="document.getElementById('delete-area-dialog').close()">Cancel</button>
+        <button type="button" class="outline" data-close-dialog="delete-area-dialog">Cancel</button>
         <button type="submit" class="contrast">Delete</button>
       </footer>
     </form>

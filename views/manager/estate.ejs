@@ -1,6 +1,6 @@
 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
   <h2 style="margin: 0;"><%= estate.name %></h2>
-  <button class="outline" onclick="document.getElementById('rename-estate-dialog').showModal()">Edit</button>
+  <button class="outline" data-dialog="rename-estate-dialog">Edit</button>
 </div>
 
 <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
@@ -21,7 +21,7 @@
       <% }) %>
     </ul>
   <% } %>
-  <button class="outline" style="margin-top: 1rem;" onclick="document.getElementById('create-area-dialog').showModal()">
+  <button class="outline" style="margin-top: 1rem;" data-dialog="create-area-dialog">
     + New Area
   </button>
 </section>
@@ -30,7 +30,7 @@
 <dialog id="rename-estate-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('rename-estate-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="rename-estate-dialog"></button>
       <h3>Rename Estate</h3>
     </header>
     <form action="/manager/estate/rename" method="POST">
@@ -49,7 +49,7 @@
 <dialog id="create-area-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('create-area-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="create-area-dialog"></button>
       <h3>New Area</h3>
     </header>
     <form action="/manager/areas" method="POST">

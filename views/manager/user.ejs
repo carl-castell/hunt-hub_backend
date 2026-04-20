@@ -6,8 +6,8 @@
 
 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
   <h2 style="margin: 0;"><%= targetUser.firstName %> <%= targetUser.lastName %></h2>
-  <button class="outline" onclick="document.getElementById('edit-role-dialog').showModal()">Edit Role</button>
-  <button class="secondary outline" onclick="document.getElementById('delete-user-dialog').showModal()">Delete</button>
+  <button class="outline" data-dialog="edit-role-dialog">Edit Role</button>
+  <button class="secondary outline" data-dialog="delete-user-dialog">Delete</button>
 </div>
 
 <a href="/manager/people" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Back to People</a>
@@ -47,11 +47,7 @@
         readonly
         style="flex: 1;"
       />
-      <button
-        type="button"
-        class="outline"
-        onclick="navigator.clipboard.writeText(document.getElementById('activation-link').value).then(() => this.textContent = 'Copied!').catch(() => this.textContent = 'Failed')"
-      >
+      <button type="button" class="outline" data-copy-target="activation-link">
         Copy
       </button>
     </div>
@@ -82,12 +78,11 @@
 
 <% } %>
 
-
 <!-- ── Edit Role Dialog ───────────────────────────────────────────────────── -->
 <dialog id="edit-role-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('edit-role-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="edit-role-dialog"></button>
       <h3>Edit Role</h3>
     </header>
     <form action="/manager/people/<%= targetUser.id %>/role" method="POST">
@@ -99,7 +94,7 @@
         </select>
       </label>
       <footer>
-        <button type="button" class="outline" onclick="document.getElementById('edit-role-dialog').close()">Cancel</button>
+        <button type="button" class="outline" data-close-dialog="edit-role-dialog">Cancel</button>
         <button type="submit">Save</button>
       </footer>
     </form>
@@ -110,7 +105,7 @@
 <dialog id="delete-user-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" onclick="document.getElementById('delete-user-dialog').close()"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="delete-user-dialog"></button>
       <h3>Delete User</h3>
     </header>
     <p>
@@ -120,7 +115,7 @@
     </p>
     <form action="/manager/people/<%= targetUser.id %>/delete" method="POST">
       <footer>
-        <button type="button" class="outline" onclick="document.getElementById('delete-user-dialog').close()">Cancel</button>
+        <button type="button" class="outline" data-close-dialog="delete-user-dialog">Cancel</button>
         <button type="submit" class="contrast">Delete</button>
       </footer>
     </form>
