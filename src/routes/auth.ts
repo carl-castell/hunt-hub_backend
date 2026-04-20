@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { usersTable } from '../db/schema/users';
 import { loginSchema } from '../schemas';
+import { authLimiter } from '@/middlewares/rateLimiter';
 
 const authRouter: Router = express.Router();
 
@@ -14,7 +15,7 @@ authRouter.get('/login', (req: Request, res: Response) => {
 });
 
 // POST /login
-authRouter.post('/login', async (req: Request, res: Response) => {
+authRouter.post('/login', authLimiter, async (req: Request, res: Response) => {
   const result = loginSchema.safeParse(req.body);
   if (!result.success) {
     return res.render('login', {

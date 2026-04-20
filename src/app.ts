@@ -8,6 +8,7 @@ import pg from 'pg';
 
 import { logger } from "./middlewares/logger";
 import { requireAdmin, requireManager, requireAuth } from './middlewares/requireRole';
+import { generalLimiter } from "./middlewares/rateLimiter";
 
 import homeRouter from "./routes/home";
 import authRouter from "./routes/auth";
@@ -65,6 +66,7 @@ app.use(
 );
 
 app.use(logger);
+app.use(generalLimiter);
 app.use(express.static(path.join(process.cwd(), "public")));
 
 app.use("/", homeRouter);
