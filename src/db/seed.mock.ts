@@ -13,7 +13,7 @@ export async function seedMockData() {
     console.log(`  Inserted estate: ${estate.name}`);
     await users(10, estateId);
     await guests(40, estateId);
-    await territories(3, estateId);
+    await areas(3, estateId);
     await events(4, estateId);
     estateId++;
   }
@@ -66,7 +66,7 @@ async function guests(num: number, id: number) {
   }
 }
 
-async function territories(num: number, id: number) {
+async function areas(num: number, id: number) {
   let areaId = 1;
   for (let index = 0; index < num; index++) {
     await db
@@ -76,7 +76,7 @@ async function territories(num: number, id: number) {
         estateId: id,
       })
       .returning();
-    process.stdout.write(`  ${index + 1} territories inserted\r`);
+    process.stdout.write(`  ${index + 1} areas inserted\r`);
     await stands(50, areaId);
     areaId++;
   }

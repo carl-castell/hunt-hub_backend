@@ -6,12 +6,12 @@ import { standsDriveTable, standsGroupTable, standsGuestTable } from "./join_tab
 export const standsTable = pgTable("stands", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     number: varchar().notNull(),
-    areaId: integer("territory_id").notNull(),
+    areaId: integer("area_id").notNull(),
     location: point(),
 });
 
 export const standsRelations = relations(standsTable, ({ many, one }) => ({
-    territory: one(areasTable, {
+    area: one(areasTable, {
         fields: [standsTable.areaId],
         references: [areasTable.id],
     }),

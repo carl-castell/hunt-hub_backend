@@ -179,14 +179,14 @@ erDiagram
         int leader_id FK
         varchar group_name
     }
-    TERRITORIES {
+    AREAS {
         int id PK
         int estate_id FK
-        varchar territory_name
+        varchar area_name
     }
     STANDS {
         int id PK
-        int territory_id FK
+        int area_id FK
         varchar number
         point location
     }
@@ -245,8 +245,8 @@ erDiagram
     ESTATES ||--o{ USERS : "has"
     ESTATES ||--o{ GUESTS : "has"
     ESTATES ||--o{ EVENTS : "has"
-    ESTATES ||--o{ TERRITORIES : "has"
-    TERRITORIES ||--o{ STANDS : "has"
+    ESTATES ||--o{ AREAS : "has"
+    AREAS ||--o{ STANDS : "has"
     EVENTS ||--o{ INVITATIONS : "has"
     EVENTS ||--o{ DRIVES : "has"
     DRIVES ||--o{ GROUPS : "has"
