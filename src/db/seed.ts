@@ -4,8 +4,23 @@ import * as schema from './schema';
 import { usersTable } from './schema/users';
 import { getTableName, sql, Table } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
+import * as readline from 'readline';
 
 const SALT_ROUNDS = 10;
+
+async function confirm(question: string): Promise<boolean> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.toLowerCase() === 'y');
+    });
+  });
+}
 
 async function resetTable(table: Table) {
   return db.execute(
@@ -14,10 +29,19 @@ async function resetTable(table: Table) {
 }
 
 async function main() {
+  console.log('\x1b[33m%s\x1b[0m', '⚠️  WARNING: This will delete all data and reseed the database.');
+  console.log(`   DB_PROVIDER: ${process.env.DB_PROVIDER}`);
+  console.log(`   Admin email: ${process.env.ADMIN_EMAIL}\n`);
+
+  const confirmed = await confirm('Are you sure you want to continue? (y/N): ');
+  if (!confirmed) {
+    console.log('Aborted.');
+    process.exit(0);
+  }
+
   // ── Enable PostGIS ─────────────────────────────────────────────────────────
   await db.execute(sql`CREATE EXTENSION IF NOT EXISTS postgis`);
   console.log('> PostGIS extension enabled');
-  
 
   try {
     for (const table of [
