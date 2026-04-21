@@ -4,10 +4,14 @@ export * from './guests';
 export * from './drives';
 export * from './estates';
 export * from './events';
-export * from './groups';
 export * from './invitations';
 export * from './licenses';
 export * from './stands';
 export * from './areas';
 export * from './user_auth_tokens';
 export * from './audit_logs';
+export * from './template_groups';
+export * from './template_stand_assignments';
+export * from './drive_groups';
+export * from './drive_stand_assignments';
+

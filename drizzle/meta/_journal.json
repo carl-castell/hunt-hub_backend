@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1776732784864,
-      "tag": "0000_demonic_richard_fisk",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776735038173,
-      "tag": "0001_overrated_thunderbolt",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1776794235271,
-      "tag": "0002_silly_meteorite",
+      "when": 1776800755241,
+      "tag": "0000_mixed_puppet_master",
       "breakpoints": true
     }
   ]

@@ -50,7 +50,6 @@ async function main() {
       schema.standsTable,
       schema.areasTable,
       schema.drivesTable,
-      schema.groupsTable,
       schema.invitationsTable,
       schema.eventsTable,
       schema.accountsTable,

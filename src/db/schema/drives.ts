@@ -1,7 +1,7 @@
 import { relations } from "drizzle-orm";
 import { integer, pgTable, time } from "drizzle-orm/pg-core";
 import { eventsTable } from "./events";
-import { groupsTable } from "./groups";
+import { driveGroupsTable } from "./drive_groups";
 
 
 export const drivesTable = pgTable("drives", {
@@ -16,5 +16,5 @@ export const drivesRelations = relations(drivesTable, ({ many, one }) => ({
         fields: [drivesTable.eventId],
         references: [eventsTable.id],
     }),
-    groups: many(groupsTable),
+    groups: many(driveGroupsTable),
 }))
