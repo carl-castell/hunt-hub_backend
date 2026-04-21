@@ -15,6 +15,13 @@
       "when": 1776735038173,
       "tag": "0001_overrated_thunderbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776794235271,
+      "tag": "0002_silly_meteorite",
+      "breakpoints": true
     }
   ]
 }

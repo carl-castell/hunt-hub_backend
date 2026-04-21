@@ -1,7 +1,6 @@
 export * from './users';
 export * from './accounts';
 export * from './guests';
-export * from './join_tables';
 export * from './drives';
 export * from './estates';
 export * from './events';
