@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import { pgTable, integer, timestamp, varchar, json } from 'drizzle-orm/pg-core';
 import { usersTable } from './users';
 
@@ -9,3 +10,12 @@ export const auditLogsTable = pgTable('audit_logs', {
   metadata: json('metadata'),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+
+export const auditLogsRelations = relations(auditLogsTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [auditLogsTable.userId],
+    references: [usersTable.id],
+  }),
+}));
+

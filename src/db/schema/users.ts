@@ -27,8 +27,15 @@ export const usersRelations = relations(usersTable, ({ one, many }) => ({
     fields: [usersTable.estateId],
     references: [estatesTable.id],
   }),
-  account: one(accountsTable),
-  guest: one(guestsTable),
+  account: one(accountsTable, {
+    fields: [usersTable.id],
+    references: [accountsTable.userId],
+  }),
+  guest: one(guestsTable, {
+    fields: [usersTable.id],
+    references: [guestsTable.userId],
+  }),
+
   authTokens: many(userAuthTokensTable),
   auditLogs: many(auditLogsTable),
 }));
