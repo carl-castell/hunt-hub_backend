@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { db, pool } from './index';
 import * as schema from './schema';
 import { usersTable } from './schema/users';
+import { accountsTable } from './schema/accounts';
 import { getTableName, sql, Table } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 import * as readline from 'readline';
@@ -39,7 +40,6 @@ async function main() {
     process.exit(0);
   }
 
-  // ── Enable PostGIS ─────────────────────────────────────────────────────────
   await db.execute(sql`CREATE EXTENSION IF NOT EXISTS postgis`);
   console.log('> PostGIS extension enabled');
 
@@ -47,17 +47,17 @@ async function main() {
     for (const table of [
       schema.standsDriveTable,
       schema.standsGroupTable,
-      schema.standsGuestTable,
       schema.trainingCertificatesTable,
       schema.licensesTable,
       schema.standsTable,
       schema.areasTable,
       schema.drivesTable,
       schema.groupsTable,
-      schema.usersTable,
       schema.invitationsTable,
       schema.eventsTable,
+      schema.accountsTable,
       schema.guestsTable,
+      schema.usersTable,
       schema.estatesTable,
     ]) {
       await resetTable(table);
@@ -71,21 +71,27 @@ async function main() {
   console.log('> seeding started');
   const startTime = Date.now();
 
-  // Admin (always seeded)
-  await db
+  // Admin user
+  const [adminUser] = await db
     .insert(usersTable)
     .values({
       firstName: process.env.ADMIN_FIRST_NAME!,
       lastName: process.env.ADMIN_LAST_NAME!,
-      email: process.env.ADMIN_EMAIL!,
       role: 'admin',
-      password: await bcrypt.hash(process.env.ADMIN_PASSWORD!, SALT_ROUNDS),
-      active: true,
     })
     .returning();
+
+  await db
+    .insert(accountsTable)
+    .values({
+      userId: adminUser.id,
+      email: process.env.ADMIN_EMAIL!,
+      password: await bcrypt.hash(process.env.ADMIN_PASSWORD!, SALT_ROUNDS),
+      active: true,
+    });
+
   console.log('  Admin user inserted');
 
-  // Mock data (only if SEED_MOCK_DATA=true)
   if (process.env.SEED_MOCK_DATA === 'true') {
     console.log('> SEED_MOCK_DATA enabled — seeding mock data...');
     const { seedMockData } = await import('./seed.mock');

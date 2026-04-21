@@ -1,1 +1,0 @@
-ALTER TABLE "training_certificates" RENAME COLUMN "expiry_date" TO "issue_date";

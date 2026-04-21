@@ -1,32 +1,33 @@
 import { Request, Response } from 'express';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
+import { usersTable } from '../../db/schema/users';
 import { guestsTable } from '../../db/schema/guests';
 import { z } from 'zod';
 
-const updateGuestSchema = z.object({
-  firstName: z.string().min(1),
-  lastName:  z.string().min(1),
-  email:     z.string().email(),
-  phone:     z.string().min(1),
+const createGuestSchema = z.object({
+  firstName:   z.string().min(1),
+  lastName:    z.string().min(1),
+  email:       z.string().email(),
+  phone:       z.string().min(1),
+  dateOfBirth: z.string().min(1),
+  rating:      z.coerce.number().int().min(1).max(5).optional(),
 });
 
-const createGuestSchema = z.object({
-  firstName: z.string().min(1),
-  lastName:  z.string().min(1),
-  email:     z.string().email(),
-  phone:     z.string().min(1),
-});
+const updateGuestSchema = createGuestSchema;
 
 export async function getGuests(req: Request, res: Response) {
   try {
     const user = req.session.user!;
     const { search, sortBy } = req.query as { search?: string; sortBy?: string };
 
-    let guests = await db
+    let rows = await db
       .select()
       .from(guestsTable)
-      .where(eq(guestsTable.estateId, user.estateId!));
+      .innerJoin(usersTable, eq(guestsTable.userId, usersTable.id))
+      .where(eq(usersTable.estateId, user.estateId!));
+
+    let guests = rows.map(r => ({ ...r.users, ...r.guests }));
 
     if (search && search.trim() !== '') {
       const term = search.trim().toLowerCase();
@@ -66,15 +67,18 @@ export async function postCreateGuest(req: Request, res: Response) {
       });
     }
 
-    const [newGuest] = await db
-      .insert(guestsTable)
-      .values({
-        ...result.data,
-        estateId: user.estateId!,
-      })
+    const { firstName, lastName, email, phone, dateOfBirth, rating } = result.data;
+
+    const [newUser] = await db
+      .insert(usersTable)
+      .values({ firstName, lastName, role: 'guest', estateId: user.estateId! })
       .returning();
 
-    res.redirect(`/manager/guests/${newGuest.id}`);
+    await db
+      .insert(guestsTable)
+      .values({ userId: newUser.id, email, phone, dateOfBirth, rating });
+
+    res.redirect(`/manager/guests/${newUser.id}`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -86,13 +90,16 @@ export async function getGuest(req: Request, res: Response) {
     const user = req.session.user!;
     const { id } = req.params;
 
-    const [guest] = await db
+    const [row] = await db
       .select()
       .from(guestsTable)
-      .where(eq(guestsTable.id, Number(id)))
+      .innerJoin(usersTable, eq(guestsTable.userId, usersTable.id))
+      .where(eq(guestsTable.userId, Number(id)))
       .limit(1);
 
-    if (!guest || guest.estateId !== user.estateId) return res.status(404).send('Guest not found');
+    if (!row || row.users.estateId !== user.estateId) return res.status(404).send('Guest not found');
+
+    const guest = { ...row.users, ...row.guests };
 
     res.render('manager/guest', { title: 'Guest', user, guest });
   } catch (err) {
@@ -106,21 +113,29 @@ export async function postUpdateGuest(req: Request, res: Response) {
     const user = req.session.user!;
     const { id } = req.params;
 
-    const [guest] = await db
+    const [row] = await db
       .select()
       .from(guestsTable)
-      .where(eq(guestsTable.id, Number(id)))
+      .innerJoin(usersTable, eq(guestsTable.userId, usersTable.id))
+      .where(eq(guestsTable.userId, Number(id)))
       .limit(1);
 
-    if (!guest || guest.estateId !== user.estateId) return res.status(404).send('Guest not found');
+    if (!row || row.users.estateId !== user.estateId) return res.status(404).send('Guest not found');
 
     const result = updateGuestSchema.safeParse(req.body);
     if (!result.success) return res.status(400).send(result.error.issues[0].message);
 
+    const { firstName, lastName, email, phone, dateOfBirth, rating } = result.data;
+
+    await db
+      .update(usersTable)
+      .set({ firstName, lastName })
+      .where(eq(usersTable.id, Number(id)));
+
     await db
       .update(guestsTable)
-      .set(result.data)
-      .where(eq(guestsTable.id, Number(id)));
+      .set({ email, phone, dateOfBirth, rating })
+      .where(eq(guestsTable.userId, Number(id)));
 
     res.redirect(`/manager/guests/${id}`);
   } catch (err) {
@@ -134,15 +149,17 @@ export async function postDeleteGuest(req: Request, res: Response) {
     const user = req.session.user!;
     const { id } = req.params;
 
-    const [guest] = await db
+    const [row] = await db
       .select()
       .from(guestsTable)
-      .where(eq(guestsTable.id, Number(id)))
+      .innerJoin(usersTable, eq(guestsTable.userId, usersTable.id))
+      .where(eq(guestsTable.userId, Number(id)))
       .limit(1);
 
-    if (!guest || guest.estateId !== user.estateId) return res.status(404).send('Guest not found');
+    if (!row || row.users.estateId !== user.estateId) return res.status(404).send('Guest not found');
 
-    await db.delete(guestsTable).where(eq(guestsTable.id, Number(id)));
+    // Cascades to guestsTable via FK
+    await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
 
     res.redirect('/manager/guests');
   } catch (err) {
@@ -151,7 +168,6 @@ export async function postDeleteGuest(req: Request, res: Response) {
   }
 }
 
-// ── Levenshtein distance for fuzzy search ─────────────────────────────────────
 function levenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = [];
   for (let i = 0; i <= b.length; i++) matrix[i] = [i];

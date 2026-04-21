@@ -1,19 +1,20 @@
-import { integer, pgTable, pgEnum, varchar, check, boolean } from "drizzle-orm/pg-core";
+import { integer, pgTable, pgEnum, varchar, timestamp, check } from "drizzle-orm/pg-core";
 import { relations, sql } from 'drizzle-orm';
 import { estatesTable } from "./estates";
-import { groupsTable } from "./groups";
+import { userAuthTokensTable } from "./user_auth_tokens";
+import { accountsTable } from "./accounts";
+import { guestsTable } from "./guests";
+import { auditLogsTable } from "./audit_logs";
 
-export const roleEnum = pgEnum('role', ['admin', 'manager', 'staff']);
+export const roleEnum = pgEnum('role', ['admin', 'manager', 'staff', 'guest']);
 
 export const usersTable = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  estateId: integer('estate_id'),
-  firstName: varchar('first_name',{ length: 255 }).notNull(),
-  lastName: varchar('last_name',{ length: 255 }).notNull(),
-  email: varchar({ length: 255 }).unique().notNull(),
+  firstName: varchar('first_name', { length: 255 }).notNull(),
+  lastName: varchar('last_name', { length: 255 }).notNull(),
   role: roleEnum().notNull(),
-  active: boolean().notNull().default(false),
-  password: varchar({ length: 255 }).notNull(),
+  estateId: integer('estate_id').references(() => estatesTable.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (table) => ({
   estateIdRequiredForNonAdmin: check(
     'estate_id_required_for_non_admin',
@@ -21,10 +22,13 @@ export const usersTable = pgTable("users", {
   ),
 }));
 
-export const usersRelations = relations(usersTable, ({ one, many  }) => ({
-  group: many(groupsTable),
+export const usersRelations = relations(usersTable, ({ one, many }) => ({
   estate: one(estatesTable, {
     fields: [usersTable.estateId],
     references: [estatesTable.id],
-  })
+  }),
+  account: one(accountsTable),
+  guest: one(guestsTable),
+  authTokens: many(userAuthTokensTable),
+  auditLogs: many(auditLogsTable),
 }));

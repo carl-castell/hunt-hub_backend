@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable } from '../../db/schema/users';
+import { accountsTable } from '../../db/schema/accounts';
 import { userAuthTokensTable } from '../../db/schema/user_auth_tokens';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
@@ -28,7 +29,7 @@ export async function getPeople(req: Request, res: Response) {
       .where(eq(usersTable.estateId, user.estateId!));
 
     const sorted = people.sort((a, b) => {
-      const roleOrder = { manager: 0, staff: 1, admin: 2 };
+      const roleOrder = { manager: 0, staff: 1, admin: 2, guest: 3 };
       const roleDiff = roleOrder[a.role] - roleOrder[b.role];
       if (roleDiff !== 0) return roleDiff;
       return a.lastName.localeCompare(b.lastName);
@@ -52,26 +53,21 @@ export async function postCreateUser(req: Request, res: Response) {
 
     const [existing] = await db
       .select()
-      .from(usersTable)
-      .where(eq(usersTable.email, email))
+      .from(accountsTable)
+      .where(eq(accountsTable.email, email))
       .limit(1);
 
     if (existing) return res.status(400).send('A user with that email already exists.');
 
-    const throwawayPassword = await bcrypt.hash(crypto.randomUUID(), 10);
-
     const [newUser] = await db
       .insert(usersTable)
-      .values({
-        firstName,
-        lastName,
-        email,
-        role,
-        active:   false,
-        estateId: user.estateId!,
-        password: throwawayPassword,
-      })
+      .values({ firstName, lastName, role, estateId: user.estateId! })
       .returning();
+
+    const throwawayPassword = await bcrypt.hash(crypto.randomUUID(), 10);
+    await db
+      .insert(accountsTable)
+      .values({ userId: newUser.id, email, password: throwawayPassword, active: false });
 
     const token = crypto.randomUUID();
     await db.insert(userAuthTokensTable).values({
@@ -109,12 +105,18 @@ export async function getUser(req: Request, res: Response) {
       .where(eq(userAuthTokensTable.userId, targetUser.id))
       .limit(1);
 
+    const [account] = await db
+      .select()
+      .from(accountsTable)
+      .where(eq(accountsTable.userId, targetUser.id))
+      .limit(1);
+
     const domain = process.env.DOMAIN || 'http://localhost:3000';
 
     res.render('manager/user', {
       title: 'People',
       user,
-      targetUser,
+      targetUser: { ...targetUser, ...account },
       activationToken: targetUser.id === user.id ? null : (authToken?.token || null),
       domain,
       error: null,
@@ -146,6 +148,12 @@ export async function postUpdateUserRole(req: Request, res: Response) {
       .where(eq(userAuthTokensTable.userId, targetUser.id))
       .limit(1);
 
+    const [account] = await db
+      .select()
+      .from(accountsTable)
+      .where(eq(accountsTable.userId, targetUser.id))
+      .limit(1);
+
     const domain = process.env.DOMAIN || 'http://localhost:3000';
 
     const result = updateRoleSchema.safeParse(req.body);
@@ -163,7 +171,7 @@ export async function postUpdateUserRole(req: Request, res: Response) {
         return res.render('manager/user', {
           title: 'People',
           user,
-          targetUser,
+          targetUser: { ...targetUser, ...account },
           activationToken: targetUser.id === user.id ? null : (authToken?.token || null),
           domain,
           error: 'At least one manager must exist per estate. Assign another manager before changing this role.',
@@ -187,30 +195,6 @@ export async function postUpdateUserRole(req: Request, res: Response) {
   }
 }
 
-export async function postDeleteUser(req: Request, res: Response) {
-  try {
-    const user = req.session.user!;
-    const { id } = req.params;
-
-    const [targetUser] = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, Number(id)))
-      .limit(1);
-
-    if (!targetUser || targetUser.estateId !== user.estateId) {
-      return res.status(404).send('User not found');
-    }
-
-    await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
-
-    res.redirect('/manager/people');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
-  }
-}
-
 export async function postDeactivateUser(req: Request, res: Response) {
   try {
     const user = req.session.user!;
@@ -227,9 +211,9 @@ export async function postDeactivateUser(req: Request, res: Response) {
     }
 
     await db
-      .update(usersTable)
+      .update(accountsTable)
       .set({ active: false })
-      .where(eq(usersTable.id, Number(id)));
+      .where(eq(accountsTable.userId, Number(id)));
 
     res.redirect(`/manager/people/${id}`);
   } catch (err) {
@@ -254,9 +238,9 @@ export async function postReactivateUser(req: Request, res: Response) {
     }
 
     await db
-      .update(usersTable)
+      .update(accountsTable)
       .set({ active: true })
-      .where(eq(usersTable.id, Number(id)));
+      .where(eq(accountsTable.userId, Number(id)));
 
     res.redirect(`/manager/people/${id}`);
   } catch (err) {
@@ -293,6 +277,31 @@ export async function postResendActivation(req: Request, res: Response) {
     });
 
     res.redirect(`/manager/people/${id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function postDeleteUser(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const { id } = req.params;
+
+    const [targetUser] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, Number(id)))
+      .limit(1);
+
+    if (!targetUser || targetUser.estateId !== user.estateId) {
+      return res.status(404).send('User not found');
+    }
+
+    // Cascades to accounts and auth tokens
+    await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
+
+    res.redirect('/manager/people');
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

@@ -1,5 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
+
+vi.mock('@/db', () => ({
+  db: {
+    select: vi.fn().mockReturnThis(),
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    limit: vi.fn(),
+  },
+}));
+
+import { db } from '@/db';
 import {
   requireAuth,
   requireAdmin,
@@ -8,12 +19,10 @@ import {
   requireEstateAccess,
 } from '@/middlewares/requireRole';
 
+const mockLimit = vi.mocked(db as any).limit as ReturnType<typeof vi.fn>;
+
 function mockReq(overrides: Partial<Request> = {}): Partial<Request> {
-  return {
-    session: {} as any,
-    params: {},
-    ...overrides,
-  };
+  return { session: {} as any, params: {}, ...overrides };
 }
 
 function mockRes(): Partial<Response> {
@@ -94,36 +103,63 @@ describe('requireAdmin', () => {
 // ── requireManager ────────────────────────────────────────────────────────────
 
 describe('requireManager', () => {
-  it('calls next() if user is manager', () => {
+  beforeEach(() => {
+    vi.mocked(db as any).select.mockClear();
+    vi.mocked(db as any).from.mockClear();
+    vi.mocked(db as any).where.mockClear();
+    mockLimit.mockReset();
+  });
+
+  it('calls next() if user is manager', async () => {
+    mockLimit.mockResolvedValueOnce([{ id: 1, role: 'manager' }]);
+
     const req = mockReq({ session: { user: { id: 1, role: 'manager' } } as any });
     const res = mockRes();
     const next = mockNext();
 
-    requireManager(req as Request, res as Response, next);
+    await requireManager(req as Request, res as Response, next);
 
     expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
   });
 
-  it('returns 403 if user is not manager', () => {
+  it('returns 403 if user is not manager', async () => {
+    mockLimit.mockResolvedValueOnce([{ id: 2, role: 'admin' }]);
+
     const req = mockReq({ session: { user: { id: 2, role: 'admin' } } as any });
     const res = mockRes();
     const next = mockNext();
 
-    requireManager(req as Request, res as Response, next);
+    await requireManager(req as Request, res as Response, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.send).toHaveBeenCalledWith('Forbidden');
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('redirects to /login if no session', () => {
+  it('redirects to /login if no session', async () => {
     const req = mockReq({ session: {} as any });
     const res = mockRes();
     const next = mockNext();
 
-    requireManager(req as Request, res as Response, next);
+    await requireManager(req as Request, res as Response, next);
 
     expect(res.redirect).toHaveBeenCalledWith('/login');
+    expect(next).not.toHaveBeenCalled();
+    expect(vi.mocked(db as any).select).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 if db throws', async () => {
+    mockLimit.mockRejectedValueOnce(new Error('DB failure'));
+
+    const req = mockReq({ session: { user: { id: 1, role: 'manager' } } as any });
+    const res = mockRes();
+    const next = mockNext();
+
+    await requireManager(req as Request, res as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith('Server error');
     expect(next).not.toHaveBeenCalled();
   });
 });

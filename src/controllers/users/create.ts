@@ -1,14 +1,13 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import bcrypt from 'bcrypt';
 import { db } from '../../db';
 import { usersTable, userAuthTokensTable } from '../../db/schema';
+import { accountsTable } from '../../db/schema/accounts';
 import { createManagerSchema } from '@/schemas';
 import { renderTemplate, sendMail } from '@/mail';
 
 export async function createManager(req: Request, res: Response) {
   try {
-    // ── Zod validation ────────────────────────────────────────────────────────
     const result = createManagerSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).send(result.error.issues[0].message);
@@ -16,21 +15,24 @@ export async function createManager(req: Request, res: Response) {
 
     const { firstName, lastName, email, estateId } = result.data;
 
-    // Create user with random password and active: false
-    const randomPassword = await bcrypt.hash(crypto.randomUUID(), 10);
-
+    // Insert into usersTable (no password/email/active here anymore)
     const [newManager] = await db
       .insert(usersTable)
       .values({
         firstName,
         lastName,
-        email,
         role: 'manager',
         estateId: Number(estateId),
-        password: randomPassword,
-        active: false,
       })
       .returning();
+
+    // Insert into accountsTable
+    await db.insert(accountsTable).values({
+      userId: newManager.id,
+      email,
+      password: null,
+      active: false,
+    });
 
     // Create activation token — expires in 48 hours
     const token = crypto.randomUUID();
@@ -62,7 +64,6 @@ export async function createManager(req: Request, res: Response) {
       });
     } catch (emailErr) {
       console.error('[email error] Failed to send activation email:', emailErr);
-      // User and token are already created — just log the error and continue
     }
 
     res.redirect(`/admin/estates/${estateId}`);

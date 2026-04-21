@@ -3,26 +3,21 @@ import request from 'supertest';
 import app from '@/app';
 import { db } from '@/db';
 import { usersTable, userAuthTokensTable, estatesTable } from '@/db/schema';
+import { accountsTable } from '@/db/schema/accounts';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 async function loginAs(role: 'admin' | 'manager' | 'staff') {
   const agent = request.agent(app);
-
   const credentials = {
-    admin: { email: 'admin@test.com', password: 'adminpass123' },
+    admin:   { email: 'admin@test.com',   password: 'adminpass123'   },
     manager: { email: 'manager@test.com', password: 'managerpass123' },
-    staff: { email: 'staff@test.com', password: 'staffpass123' },
+    staff:   { email: 'staff@test.com',   password: 'staffpass123'   },
   };
-
   await agent.post('/login').send(credentials[role]);
   return agent;
 }
-
-// ── Seeds ─────────────────────────────────────────────────────────────────────
 
 let adminId: number;
 let managerId: number;
@@ -30,64 +25,45 @@ let staffId: number;
 let estateId: number;
 
 beforeAll(async () => {
-  const adminHash = await bcrypt.hash('adminpass123', 10);
+  const adminHash   = await bcrypt.hash('adminpass123',   10);
   const managerHash = await bcrypt.hash('managerpass123', 10);
-  const staffHash = await bcrypt.hash('staffpass123', 10);
+  const staffHash   = await bcrypt.hash('staffpass123',   10);
 
-  const [admin] = await db
-    .insert(usersTable)
-    .values({
-      firstName: 'Admin',
-      lastName: 'User',
-      email: 'admin@test.com',
-      password: adminHash,
-      role: 'admin',
-      active: true,
-      estateId: null,
-    })
-    .returning();
+  const [admin] = await db.insert(usersTable).values({
+    firstName: 'Admin', lastName: 'User', role: 'admin', estateId: null,
+  }).returning();
   adminId = admin.id;
+  await db.insert(accountsTable).values({
+    userId: adminId, email: 'admin@test.com', password: adminHash, active: true,
+  });
 
-  const [estate] = await db
-    .insert(estatesTable)
-    .values({ name: 'Test Estate' })
-    .returning();
+  const [estate] = await db.insert(estatesTable).values({ name: 'Test Estate' }).returning();
   estateId = estate.id;
 
-  const [manager] = await db
-    .insert(usersTable)
-    .values({
-      firstName: 'Manager',
-      lastName: 'User',
-      email: 'manager@test.com',
-      password: managerHash,
-      role: 'manager',
-      active: true,
-      estateId,
-    })
-    .returning();
+  const [manager] = await db.insert(usersTable).values({
+    firstName: 'Manager', lastName: 'User', role: 'manager', estateId,
+  }).returning();
   managerId = manager.id;
+  await db.insert(accountsTable).values({
+    userId: managerId, email: 'manager@test.com', password: managerHash, active: true,
+  });
 
-  const [staff] = await db
-    .insert(usersTable)
-    .values({
-      firstName: 'Staff',
-      lastName: 'User',
-      email: 'staff@test.com',
-      password: staffHash,
-      role: 'staff',
-      active: true,
-      estateId,
-    })
-    .returning();
+  const [staff] = await db.insert(usersTable).values({
+    firstName: 'Staff', lastName: 'User', role: 'staff', estateId,
+  }).returning();
   staffId = staff.id;
+  await db.insert(accountsTable).values({
+    userId: staffId, email: 'staff@test.com', password: staffHash, active: true,
+  });
 });
 
 afterAll(async () => {
+  // cascade from usersTable handles accountsTable rows automatically,
+  // but delete tokens first to avoid FK issues
   await db.delete(userAuthTokensTable);
-  await db.delete(usersTable).where(eq(usersTable.email, 'admin@test.com'));
-  await db.delete(usersTable).where(eq(usersTable.email, 'manager@test.com'));
-  await db.delete(usersTable).where(eq(usersTable.email, 'staff@test.com'));
+  await db.delete(usersTable).where(eq(usersTable.id, adminId));
+  await db.delete(usersTable).where(eq(usersTable.id, managerId));
+  await db.delete(usersTable).where(eq(usersTable.id, staffId));
   await db.delete(estatesTable).where(eq(estatesTable.id, estateId));
 });
 
@@ -125,26 +101,24 @@ describe('POST /users/:id/update', () => {
   it('updates user details successfully', async () => {
     const agent = await loginAs('admin');
     const res = await agent.post(`/users/${staffId}/update`).send({
-      firstName: 'Updated',
-      lastName: 'Name',
-      email: 'updated@test.com',
+      firstName: 'Updated', lastName: 'Name', email: 'updated@test.com',
     });
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe(`/users/${staffId}`);
 
     // Revert
-    await db
-      .update(usersTable)
-      .set({ firstName: 'Staff', lastName: 'User', email: 'staff@test.com' })
+    await db.update(usersTable)
+      .set({ firstName: 'Staff', lastName: 'User' })
       .where(eq(usersTable.id, staffId));
+    await db.update(accountsTable)
+      .set({ email: 'staff@test.com' })
+      .where(eq(accountsTable.userId, staffId));
   });
 
   it('returns 400 for invalid data', async () => {
     const agent = await loginAs('admin');
     const res = await agent.post(`/users/${staffId}/update`).send({
-      firstName: '',
-      lastName: '',
-      email: 'not-an-email',
+      firstName: '', lastName: '', email: 'not-an-email',
     });
     expect(res.status).toBe(400);
   });
@@ -152,18 +126,14 @@ describe('POST /users/:id/update', () => {
   it('returns 404 for non-existent user', async () => {
     const agent = await loginAs('admin');
     const res = await agent.post('/users/999999/update').send({
-      firstName: 'Ghost',
-      lastName: 'User',
-      email: 'ghost@test.com',
+      firstName: 'Ghost', lastName: 'User', email: 'ghost@test.com',
     });
     expect(res.status).toBe(404);
   });
 
   it('redirects to /login when not logged in', async () => {
     const res = await request(app).post(`/users/${staffId}/update`).send({
-      firstName: 'Test',
-      lastName: 'User',
-      email: 'test@test.com',
+      firstName: 'Test', lastName: 'User', email: 'test@test.com',
     });
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe('/login');
@@ -178,15 +148,18 @@ describe('POST /users/:id/deactivate', () => {
     const res = await agent.post(`/users/${staffId}/deactivate`);
     expect(res.status).toBe(302);
 
-    const [user] = await db
+    // active lives on accountsTable, not usersTable
+    const [account] = await db
       .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, staffId))
+      .from(accountsTable)
+      .where(eq(accountsTable.userId, staffId))
       .limit(1);
-    expect(user.active).toBe(false);
+    expect(account.active).toBe(false);
 
     // Revert
-    await db.update(usersTable).set({ active: true }).where(eq(usersTable.id, staffId));
+    await db.update(accountsTable)
+      .set({ active: true })
+      .where(eq(accountsTable.userId, staffId));
   });
 
   it('returns 404 for non-existent user', async () => {
@@ -206,18 +179,22 @@ describe('POST /users/:id/deactivate', () => {
 
 describe('POST /users/:id/reactivate', () => {
   it('reactivates a user successfully', async () => {
-    await db.update(usersTable).set({ active: false }).where(eq(usersTable.id, staffId));
+    // Pre-condition: deactivate via accountsTable
+    await db.update(accountsTable)
+      .set({ active: false })
+      .where(eq(accountsTable.userId, staffId));
 
     const agent = await loginAs('admin');
     const res = await agent.post(`/users/${staffId}/reactivate`);
     expect(res.status).toBe(302);
 
-    const [user] = await db
+    // active lives on accountsTable
+    const [account] = await db
       .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, staffId))
+      .from(accountsTable)
+      .where(eq(accountsTable.userId, staffId))
       .limit(1);
-    expect(user.active).toBe(true);
+    expect(account.active).toBe(true);
   });
 
   it('returns 404 for non-existent user', async () => {
@@ -237,40 +214,30 @@ describe('POST /users/:id/reactivate', () => {
 
 describe('POST /users/:id/delete', () => {
   it('admin deletes a user with estateId and redirects to estate page', async () => {
+    const [tempUser] = await db.insert(usersTable).values({
+      firstName: 'Temp', lastName: 'User', role: 'staff', estateId,
+    }).returning();
+    // password must be non-null (accountsTable constraint); use a placeholder hash
     const hash = await bcrypt.hash('temppass', 10);
-    const [tempUser] = await db
-      .insert(usersTable)
-      .values({
-        firstName: 'Temp',
-        lastName: 'User',
-        email: 'temp@test.com',
-        password: hash,
-        role: 'staff',
-        active: true,
-        estateId,
-      })
-      .returning();
+    await db.insert(accountsTable).values({
+      userId: tempUser.id, email: 'temp@test.com', password: hash, active: true,
+    });
 
     const agent = await loginAs('admin');
     const res = await agent.post(`/users/${tempUser.id}/delete`);
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe(`/admin/estates/${estateId}`);
+    // cascade deletes accountsTable row automatically
   });
 
   it('admin deletes another admin (null estateId) and redirects to /admin', async () => {
+    const [tempAdmin] = await db.insert(usersTable).values({
+      firstName: 'Temp', lastName: 'Admin', role: 'admin', estateId: null,
+    }).returning();
     const hash = await bcrypt.hash('temppass', 10);
-    const [tempAdmin] = await db
-      .insert(usersTable)
-      .values({
-        firstName: 'Temp',
-        lastName: 'Admin',
-        email: 'tempadmin@test.com',
-        password: hash,
-        role: 'admin',
-        active: true,
-        estateId: null,
-      })
-      .returning();
+    await db.insert(accountsTable).values({
+      userId: tempAdmin.id, email: 'tempadmin@test.com', password: hash, active: true,
+    });
 
     const agent = await loginAs('admin');
     const res = await agent.post(`/users/${tempAdmin.id}/delete`);
@@ -312,9 +279,9 @@ describe('POST /users/:id/resend-activation', () => {
 
   it('replaces existing token with a new one', async () => {
     await db.insert(userAuthTokensTable).values({
-      userId: staffId,
-      token: crypto.randomUUID(),
-      type: 'activation',
+      userId:    staffId,
+      token:     crypto.randomUUID(),
+      type:      'activation',
       expiresAt: new Date(Date.now() + 1000 * 60 * 60),
     });
 

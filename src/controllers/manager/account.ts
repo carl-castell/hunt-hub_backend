@@ -2,16 +2,17 @@ import { Request, Response } from 'express';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable } from '../../db/schema/users';
+import { accountsTable } from '../../db/schema/accounts';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 
 const changePasswordSchema = z.object({
-  oldPassword:     z.string().min(1),
-  newPassword:     z.string().min(8),
+  oldPassword: z.string().min(1),
+  newPassword: z.string().min(8),
   confirmPassword: z.string().min(1),
 }).refine(data => data.newPassword === data.confirmPassword, {
   message: 'New passwords do not match.',
-  path:    ['confirmPassword'],
+  path: ['confirmPassword'],
 });
 
 export async function getAccount(req: Request, res: Response) {
@@ -49,46 +50,71 @@ export async function postChangePassword(req: Request, res: Response) {
         title: 'Account',
         user,
         fullUser,
-        error:   result.error.issues[0].message,
+        error: result.error.issues[0].message,
         success: null,
       });
     }
 
     const { oldPassword, newPassword } = result.data;
 
-    // Fetch full user record to get hashed password
+    const [account] = await db
+      .select()
+      .from(accountsTable)
+      .where(eq(accountsTable.userId, user.id))
+      .limit(1);
+
+    if (!account) return res.status(404).send('Account not found');
+
+    if (!account.password) {
+      const [fullUser] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, user.id))
+        .limit(1);
+
+      return res.render('manager/account', {
+        title: 'Account',
+        user,
+        fullUser,
+        error: 'No password set. Please use your activation link.',
+        success: null,
+      });
+    }
+
+    const match = await bcrypt.compare(oldPassword, account.password);
+    if (!match) {
+      const [fullUser] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, user.id))
+        .limit(1);
+
+      return res.render('manager/account', {
+        title: 'Account',
+        user,
+        fullUser,
+        error: 'Current password is incorrect.',
+        success: null,
+      });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await db
+      .update(accountsTable)
+      .set({ password: hashed })
+      .where(eq(accountsTable.userId, user.id));
+
     const [fullUser] = await db
       .select()
       .from(usersTable)
       .where(eq(usersTable.id, user.id))
       .limit(1);
 
-    if (!fullUser) return res.status(404).send('User not found');
-
-    // Verify old password
-    const match = await bcrypt.compare(oldPassword, fullUser.password);
-    if (!match) {
-      return res.render('manager/account', {
-        title: 'Account',
-        user,
-        fullUser,
-        error:   'Current password is incorrect.',
-        success: null,
-      });
-    }
-
-    // Hash and save new password
-    const hashed = await bcrypt.hash(newPassword, 10);
-    await db
-      .update(usersTable)
-      .set({ password: hashed })
-      .where(eq(usersTable.id, user.id));
-
     res.render('manager/account', {
-      title: 'Account', 
+      title: 'Account',
       user,
       fullUser,
-      error:   null,
+      error: null,
       success: 'Password changed successfully.',
     });
   } catch (err) {

@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
-import { usersTable, userAuthTokensTable } from '../../db/schema';
+import { accountsTable } from '../../db/schema/accounts';
+import { userAuthTokensTable } from '../../db/schema/user_auth_tokens';
 import { activateSchema } from '@/schemas';
 import { audit } from '@/audit';
 
@@ -50,14 +51,13 @@ export async function postActivate(req: Request, res: Response) {
     if (!authToken) return res.render('activate', { layout: false, error: 'Invalid or expired activation link.', token });
     if (authToken.expiresAt < new Date()) return res.render('activate', { layout: false, error: 'This activation link has expired.', token });
 
-    // Hash new password and activate user
     const hashedPassword = await bcrypt.hash(password, 10);
-    await db
-      .update(usersTable)
-      .set({ password: hashedPassword, active: true })
-      .where(eq(usersTable.id, authToken.userId));
 
-    // Delete token so it can't be used again
+    await db
+      .update(accountsTable)
+      .set({ password: hashedPassword, active: true })
+      .where(eq(accountsTable.userId, authToken.userId));
+
     await db
       .delete(userAuthTokensTable)
       .where(eq(userAuthTokensTable.id, authToken.id));

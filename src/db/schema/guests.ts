@@ -1,29 +1,23 @@
-import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
-import { relations } from 'drizzle-orm'
-import { estatesTable } from "./estates";
+import { integer, pgTable, varchar, date } from "drizzle-orm/pg-core";
+import { relations } from 'drizzle-orm';
+import { usersTable } from "./users";
 import { invitationsTable } from "./invitations";
 import { licensesTable, trainingCertificatesTable } from "./licenses";
-import { standsGuestTable } from "./join_tables";
-
-
 
 export const guestsTable = pgTable("guests", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  estateId: integer('estate_id'),
-  firstName: varchar('first_name',{ length: 255 }).notNull(),
-  lastName: varchar('last_name',{ length: 255 }).notNull(),
-  email: varchar({ length: 255 }).notNull().unique(),
-  phone: varchar({ length: 255 }).notNull(),
+  userId: integer('user_id').primaryKey().references(() => usersTable.id, { onDelete: 'cascade' }),
+  email: varchar({ length: 255 }).notNull(),
+  phone: varchar({ length: 255 }),
+  dateOfBirth: date('date_of_birth'),
+  rating: integer(),
 });
 
-
-export const guestsRelations = relations(guestsTable,({ one, many }) => ({
-    estate: one(estatesTable, {
-        fields: [guestsTable.estateId],
-        references: [estatesTable.id],
-    }),
-    invitations: many(invitationsTable),
-    licenses: many(licensesTable),
-    trainingCertificates: many(trainingCertificatesTable),
-    stands: many(standsGuestTable),
+export const guestsRelations = relations(guestsTable, ({ one, many }) => ({
+  user: one(usersTable, {
+    fields: [guestsTable.userId],
+    references: [usersTable.id],
+  }),
+  invitations: many(invitationsTable),
+  licenses: many(licensesTable),
+  trainingCertificates: many(trainingCertificatesTable),
 }));

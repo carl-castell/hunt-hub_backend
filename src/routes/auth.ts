@@ -3,19 +3,18 @@ import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { usersTable } from '../db/schema/users';
+import { accountsTable } from '../db/schema/accounts';
 import { loginSchema } from '../schemas';
 import { authLimiter } from '@/middlewares/rateLimiter';
 import { audit } from '@/audit';
 
 const authRouter: Router = express.Router();
 
-// GET /login
 authRouter.get('/login', (req: Request, res: Response) => {
   if (req.session.user) return redirectByRole(req, res);
   res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: null });
 });
 
-// POST /login
 authRouter.post('/login', authLimiter, async (req: Request, res: Response) => {
   const result = loginSchema.safeParse(req.body);
   if (!result.success) {
@@ -29,18 +28,21 @@ authRouter.post('/login', authLimiter, async (req: Request, res: Response) => {
   const { email, password } = result.data;
 
   try {
-    const [user] = await db
+    const [row] = await db
       .select()
-      .from(usersTable)
-      .where(eq(usersTable.email, email))
+      .from(accountsTable)
+      .innerJoin(usersTable, eq(accountsTable.userId, usersTable.id))
+      .where(eq(accountsTable.email, email))
       .limit(1);
 
-    if (!user || !user.password) {
+    if (!row) {
       await audit({ event: 'failed_login', ip: req.ip, metadata: { email } });
       return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
     }
 
-    if (!user.active) {
+    const { accounts: account, users: user } = row;
+
+    if (!account.active) {
       await audit({ event: 'failed_login', ip: req.ip, metadata: { email, reason: 'inactive account' } });
       return res.render('login', {
         layout: false,
@@ -49,21 +51,25 @@ authRouter.post('/login', authLimiter, async (req: Request, res: Response) => {
       });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
+    if(!account.password) {
       await audit({ event: 'failed_login', ip: req.ip, metadata: { email } });
       return res.render('login', { layout: false, title: 'Hunt-Hub | Login', error: 'Invalid email or password.' });
     }
 
+    const passwordMatch = await bcrypt.compare(password, account.password);
+
+
     req.session.user = {
-      id:        user.id,
+      id: user.id,
       firstName: user.firstName,
-      lastName:  user.lastName,
-      email:     user.email,
-      role:      user.role,
-      active:    user.active,
-      estateId:  user.estateId ?? null,
+      lastName: user.lastName,
+      email: account.email,
+      role: user.role,
+      active: account.active,
+      estateId: user.estateId ?? null,
+      createdAt: user.createdAt,
     };
+
 
     req.session.save(async (err) => {
       if (err) {
@@ -80,7 +86,6 @@ authRouter.post('/login', authLimiter, async (req: Request, res: Response) => {
   }
 });
 
-// POST /logout
 authRouter.post('/logout', async (req: Request, res: Response) => {
   const userId = req.session.user?.id;
   const ip = req.ip;
@@ -92,10 +97,10 @@ authRouter.post('/logout', async (req: Request, res: Response) => {
 
 function redirectByRole(req: Request, res: Response) {
   switch (req.session.user?.role) {
-    case 'admin':   return res.redirect('/admin');
+    case 'admin': return res.redirect('/admin');
     case 'manager': return res.redirect('/manager');
-    case 'staff':   return res.redirect('/staff');
-    default:        return res.redirect('/login');
+    case 'staff': return res.redirect('/staff');
+    default: return res.redirect('/login');
   }
 }
 

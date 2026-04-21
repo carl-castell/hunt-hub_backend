@@ -5,29 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1761136728525,
-      "tag": "0000_red_kronos",
+      "when": 1776732784864,
+      "tag": "0000_demonic_richard_fisk",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1776274117403,
-      "tag": "0001_rare_fantastic_four",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1776414270353,
-      "tag": "0002_eager_quasar",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1776414821564,
-      "tag": "0003_boring_typhoid_mary",
+      "when": 1776735038173,
+      "tag": "0001_overrated_thunderbolt",
       "breakpoints": true
     }
   ]

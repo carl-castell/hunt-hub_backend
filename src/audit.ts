@@ -10,6 +10,7 @@ type AuditEvent =
   | 'user_deleted'
   | 'user_deactivated'
   | 'user_reactivated'
+  | 'user_resend_activation'
   | 'estate_created'
   | 'estate_deleted';
 
