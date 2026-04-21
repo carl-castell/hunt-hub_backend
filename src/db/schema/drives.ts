@@ -6,7 +6,7 @@ import { driveGroupsTable } from "./drive_groups";
 
 export const drivesTable = pgTable("drives", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    eventId: integer("event_id").notNull(),
+    eventId: integer("event_id").notNull().references(() => eventsTable.id, { onDelete: "cascade" }),
     startTime: time("start_time").notNull(),
     endTime: time("end_time").notNull(),
 });
