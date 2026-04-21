@@ -2,7 +2,7 @@ import { integer, pgTable, varchar, date } from "drizzle-orm/pg-core";
 import { relations } from 'drizzle-orm';
 import { usersTable } from "./users";
 import { invitationsTable } from "./invitations";
-import { licensesTable, trainingCertificatesTable } from "./licenses";
+import { huntingLicensesTable, trainingCertificatesTable } from "./licenses";
 
 export const guestsTable = pgTable("guests", {
   userId: integer('user_id').primaryKey().references(() => usersTable.id, { onDelete: 'cascade' }),
@@ -18,6 +18,6 @@ export const guestsRelations = relations(guestsTable, ({ one, many }) => ({
     references: [usersTable.id],
   }),
   invitations: many(invitationsTable),
-  licenses: many(licensesTable),
+  huntingLicenses: many(huntingLicensesTable),
   trainingCertificates: many(trainingCertificatesTable),
 }));

@@ -46,7 +46,7 @@ async function main() {
   try {
     for (const table of [
       schema.trainingCertificatesTable,
-      schema.licensesTable,
+      schema.huntingLicensesTable,
       schema.standsTable,
       schema.areasTable,
       schema.drivesTable,
