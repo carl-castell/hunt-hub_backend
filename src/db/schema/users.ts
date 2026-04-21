@@ -7,6 +7,7 @@ import { guestsTable } from "./guests";
 import { auditLogsTable } from "./audit_logs";
 import { driveGroupsTable } from "./drive_groups";
 import { driveStandAssignmentsTable } from "./drive_stand_assignments";
+import { huntingLicensesTable, trainingCertificatesTable } from "./licenses";
 
 export const roleEnum = pgEnum('role', ['admin', 'manager', 'staff', 'guest']);
 
@@ -42,4 +43,6 @@ export const usersRelations = relations(usersTable, ({ one, many }) => ({
   auditLogs: many(auditLogsTable),
   ledGroups: many(driveGroupsTable),
   standAssignments: many(driveStandAssignmentsTable),
+  huntingLicenses: many(huntingLicensesTable),
+  trainingCertificates: many(trainingCertificatesTable),
 }));

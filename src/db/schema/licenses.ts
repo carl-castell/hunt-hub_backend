@@ -11,28 +11,34 @@ import {
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
-/**
- * Hunting Licenses
- *
- * Includes estateId for tenant scoping.
- * estateId should match the user's estateId at creation time.
- */
+// ─── Shared attachment columns ───────────────────────────────────────────────
+
+export const attachmentKind = pgEnum("attachment_kind", ["photo", "document"]);
+
+const attachmentColumns = {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  estateId: integer("estate_id").notNull(),
+  kind: attachmentKind("kind").notNull(),
+  key: text("key").notNull(),
+  contentType: text("content_type").notNull(),
+  originalName: text("original_name").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  uploadDate: timestamp("upload_date").notNull().defaultNow(),
+};
+
+// ─── Hunting Licenses ─────────────────────────────────────────────────────────
+
 export const huntingLicensesTable = pgTable(
   "hunting_licenses",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-
     estateId: integer("estate_id").notNull(),
-
     userId: integer("user_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
-
     checked: boolean().notNull().default(false),
-
-    // If this is the real expiry of the hunting license, keep it here
+    checkedAt: timestamp("checked_at"),
     expiryDate: date("expiry_date").notNull(),
-
     uploadDate: timestamp("upload_date").notNull().defaultNow(),
   },
   (t) => [
@@ -42,28 +48,34 @@ export const huntingLicensesTable = pgTable(
   ]
 );
 
-/**
- * Training Certificates
- *
- * Includes estateId for tenant scoping.
- * If certificates expire after one year and you want to query expired efficiently,
- * consider adding expiresAt later (timestamp/date) and indexing it.
- */
+export const huntingLicenseAttachmentsTable = pgTable(
+  "hunting_license_attachments",
+  {
+    ...attachmentColumns,
+    licenseId: integer("license_id")
+      .notNull()
+      .references(() => huntingLicensesTable.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    index("idx_hl_attachments_license_id").on(t.licenseId),
+    index("idx_hl_attachments_kind").on(t.licenseId, t.kind),
+    index("idx_hl_attachments_key").on(t.key),
+  ]
+);
+
+// ─── Training Certificates ────────────────────────────────────────────────────
+
 export const trainingCertificatesTable = pgTable(
   "training_certificates",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-
     estateId: integer("estate_id").notNull(),
-
     userId: integer("user_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
-
     checked: boolean().notNull().default(false),
-
+    checkedAt: timestamp("checked_at"),
     issueDate: date("issue_date").notNull(),
-
     uploadDate: timestamp("upload_date").notNull().defaultNow(),
   },
   (t) => [
@@ -73,74 +85,23 @@ export const trainingCertificatesTable = pgTable(
   ]
 );
 
-/**
- * Attachments
- *
- * One row per file stored in object storage (MinIO/S3/R2/etc).
- *
- * Business rules (enforce in backend):
- * - hunting_license: either <= 4 photos OR 1 document (pdf)
- * - training_certificate: either <= 2 photos OR 1 document (pdf)
- *
- * Suggested object keys:
- * - estates/<estateId>/hunting_licenses/<licenseId>/photos/<attachmentId>.<ext>
- * - estates/<estateId>/hunting_licenses/<licenseId>/pdf/<attachmentId>.pdf
- * - estates/<estateId>/training_certificates/<certId>/photos/<attachmentId>.<ext>
- * - estates/<estateId>/training_certificates/<certId>/pdf/<attachmentId>.pdf
- */
-export const attachmentEntityType = pgEnum("attachment_entity_type", [
-  "hunting_license",
-  "training_certificate",
-]);
-
-export const attachmentKind = pgEnum("attachment_kind", ["photo", "document"]);
-
-export const attachmentsTable = pgTable(
-  "attachments",
+export const trainingCertificateAttachmentsTable = pgTable(
+  "training_certificate_attachments",
   {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
-
-    estateId: integer("estate_id").notNull(),
-
-    entityType: attachmentEntityType("entity_type").notNull(),
-
-    /**
-     * Polymorphic pointer:
-     * - if entityType='hunting_license' then entityId = hunting_licenses.id
-     * - if entityType='training_certificate' then entityId = training_certificates.id
-     *
-     * Cannot be a DB FK to both at once; enforce correctness in backend.
-     */
-    entityId: integer("entity_id").notNull(),
-
-    kind: attachmentKind("kind").notNull(),
-
-    // Object storage pointer + metadata
-    key: text("key").notNull(),
-    contentType: text("content_type").notNull(), // image/jpeg | image/png | image/webp | application/pdf | ...
-    originalName: text("original_name").notNull(),
-    sizeBytes: integer("size_bytes").notNull(),
-
-    uploadDate: timestamp("upload_date").notNull().defaultNow(),
+    ...attachmentColumns,
+    certId: integer("cert_id")
+      .notNull()
+      .references(() => trainingCertificatesTable.id, { onDelete: "cascade" }),
   },
   (t) => [
-    index("idx_attachments_entity").on(t.estateId, t.entityType, t.entityId),
-    index("idx_attachments_kind").on(
-      t.estateId,
-      t.entityType,
-      t.entityId,
-      t.kind
-    ),
-    index("idx_attachments_key").on(t.key),
+    index("idx_tc_attachments_cert_id").on(t.certId),
+    index("idx_tc_attachments_kind").on(t.certId, t.kind),
+    index("idx_tc_attachments_key").on(t.key),
   ]
 );
 
-/**
- * Relations
- *
- * Note: attachments are polymorphic, so in queries always filter on:
- *   entityType + entityId (+ estateId)
- */
+// ─── Relations ────────────────────────────────────────────────────────────────
+
 export const huntingLicensesRelations = relations(
   huntingLicensesTable,
   ({ one, many }) => ({
@@ -148,8 +109,16 @@ export const huntingLicensesRelations = relations(
       fields: [huntingLicensesTable.userId],
       references: [usersTable.id],
     }),
-    attachments: many(attachmentsTable, {
-      relationName: "hunting_license_attachments",
+    attachments: many(huntingLicenseAttachmentsTable),
+  })
+);
+
+export const huntingLicenseAttachmentsRelations = relations(
+  huntingLicenseAttachmentsTable,
+  ({ one }) => ({
+    license: one(huntingLicensesTable, {
+      fields: [huntingLicenseAttachmentsTable.licenseId],
+      references: [huntingLicensesTable.id],
     }),
   })
 );
@@ -161,22 +130,16 @@ export const trainingCertificatesRelations = relations(
       fields: [trainingCertificatesTable.userId],
       references: [usersTable.id],
     }),
-    attachments: many(attachmentsTable, {
-      relationName: "training_certificate_attachments",
-    }),
+    attachments: many(trainingCertificateAttachmentsTable),
   })
 );
 
-export const attachmentsRelations = relations(attachmentsTable, ({ one }) => ({
-  // Virtual relations (polymorphic). Always check entityType in code.
-  huntingLicense: one(huntingLicensesTable, {
-    fields: [attachmentsTable.entityId],
-    references: [huntingLicensesTable.id],
-    relationName: "hunting_license_attachments",
-  }),
-  trainingCertificate: one(trainingCertificatesTable, {
-    fields: [attachmentsTable.entityId],
-    references: [trainingCertificatesTable.id],
-    relationName: "training_certificate_attachments",
-  }),
-}));
+export const trainingCertificateAttachmentsRelations = relations(
+  trainingCertificateAttachmentsTable,
+  ({ one }) => ({
+    certificate: one(trainingCertificatesTable, {
+      fields: [trainingCertificateAttachmentsTable.certId],
+      references: [trainingCertificatesTable.id],
+    }),
+  })
+);
