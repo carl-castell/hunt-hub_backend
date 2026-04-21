@@ -1,11 +1,16 @@
-// src/types/express.d.ts
-import type { InferSelectModel } from 'drizzle-orm';
-import type { usersTable } from '../db/schema/users';
-import type { accountsTable } from '../db/schema/accounts';
+import type { roleEnum } from '../db/schema/users';
 
-type SessionUser =
-  InferSelectModel<typeof usersTable> &
-  Pick<InferSelectModel<typeof accountsTable>, 'email' | 'active'>;
+declare global {
+  type SessionUser = {
+    id:        number;
+    firstName: string;
+    lastName:  string;
+    role:      typeof roleEnum.enumValues[number];
+    estateId:  number | null;
+    email:     string;
+    active:    boolean;
+  };
+}
 
 declare module 'express-session' {
   interface SessionData {
