@@ -125,9 +125,10 @@
   const mapEl = document.getElementById('area-map');
   const geojsonData = JSON.parse(decodeURIComponent(mapEl.dataset.geojson));
 
-    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-  });
+    const streets = L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+      maxZoom: 17
+    });
 
   const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',

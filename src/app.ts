@@ -43,8 +43,8 @@ app.use(helmet({
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"],
       "style-src": ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
-      "img-src": ["'self'", "data:", "https://*.tile.openstreetmap.org", "https://server.arcgisonline.com", "https://unpkg.com"],
-      "connect-src": ["'self'", "https://unpkg.com"],
+      "img-src": ["'self'", "data:", "https://*.opentopomap.org", "https://server.arcgisonline.com", "https://unpkg.com"],
+      "connect-src": ["'self'", "https://unpkg.com", "https://*.opentopomap.org"],
     },
   },
 }));
