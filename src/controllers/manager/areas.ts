@@ -4,6 +4,19 @@ import { db } from '../../db';
 import { areasTable } from '../../db/schema/areas';
 import { standsTable } from '../../db/schema/stands';
 import { z } from 'zod';
+import toGeoJSON from '@tmcw/togeojson';
+import { DOMParser } from '@xmldom/xmldom';
+import gdal from 'gdal-async';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
+
+import * as shapefile from 'shapefile';
+
+
+const execAsync = promisify(exec);
 
 const areaNameSchema = z.object({
   name: z.string().min(1).max(255),
@@ -12,6 +25,8 @@ const areaNameSchema = z.object({
 const deleteConfirmSchema = z.object({
   confirm: z.string(),
 });
+
+// ── Get Area ─────────────────────────────────────────────────────────────────
 
 export async function getArea(req: Request, res: Response) {
   try {
@@ -26,12 +41,57 @@ export async function getArea(req: Request, res: Response) {
 
     if (!area || area.estateId !== user.estateId) return res.status(404).send('Area not found');
 
-    res.render('manager/area', { title: 'Areas', user, area });
+    res.render('manager/area', {
+      title: 'Areas',
+      user,
+      area,
+      extraStyles: area.geofile ? `
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    .leaflet-control-zoom a {
+      all: revert;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 26px !important;
+      height: 26px !important;
+      font-size: 18px !important;
+      line-height: 26px !important;
+      color: #444 !important;
+      background-color: #fff !important;
+      border: none !important;
+      text-decoration: none !important;
+      font-weight: bold !important;
+    }
+    .leaflet-control-zoom a:hover {
+      background-color: #f4f4f4 !important;
+      color: #000 !important;
+    }
+    .leaflet-control-layers-toggle {
+      all: revert;
+      width: 36px !important;
+      height: 36px !important;
+      background-image: url('https://unpkg.com/leaflet@1.9.4/dist/images/layers.png') !important;
+      background-size: 26px !important;
+      background-repeat: no-repeat !important;
+      background-position: center !important;
+      background-color: #fff !important;
+      display: block !important;
+    }
+  </style>
+` : '',
+
+      extraScripts: area.geofile ? '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>' : '',
+    });
+
+
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
   }
 }
+
+// ── Create Area ───────────────────────────────────────────────────────────────
 
 export async function postCreateArea(req: Request, res: Response) {
   try {
@@ -51,6 +111,8 @@ export async function postCreateArea(req: Request, res: Response) {
     res.status(500).send('Server error');
   }
 }
+
+// ── Rename Area ───────────────────────────────────────────────────────────────
 
 export async function postRenameArea(req: Request, res: Response) {
   try {
@@ -80,6 +142,8 @@ export async function postRenameArea(req: Request, res: Response) {
   }
 }
 
+// ── Delete Area ───────────────────────────────────────────────────────────────
+
 export async function postDeleteArea(req: Request, res: Response) {
   try {
     const user = req.session.user!;
@@ -98,11 +162,143 @@ export async function postDeleteArea(req: Request, res: Response) {
       return res.status(400).send('Confirmation name does not match.');
     }
 
-    // cascade delete stands first
     await db.delete(standsTable).where(eq(standsTable.areaId, Number(id)));
     await db.delete(areasTable).where(eq(areasTable.id, Number(id)));
 
     res.redirect('/manager/estate');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+// ── Upload / Replace Geo File ─────────────────────────────────────────────────
+
+export async function postUploadGeofile(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const { id } = req.params;
+
+    const [area] = await db
+      .select()
+      .from(areasTable)
+      .where(eq(areasTable.id, Number(id)))
+      .limit(1);
+
+    if (!area || area.estateId !== user.estateId) return res.status(404).send('Area not found');
+    if (!req.file) return res.status(400).send('No file uploaded');
+
+    const filename = req.file.originalname.toLowerCase();
+    const content = req.file.buffer.toString('utf-8');
+    let geojson: string;
+
+    // ── GeoJSON ───────────────────────────────────────────────────────────────
+    if (filename.endsWith('.geojson') || filename.endsWith('.json')) {
+      JSON.parse(content); // validate
+      geojson = content;
+
+      // ── KML ───────────────────────────────────────────────────────────────────
+    } else if (filename.endsWith('.kml')) {
+      const dom = new DOMParser().parseFromString(content, 'text/xml' as any);
+
+      geojson = JSON.stringify(toGeoJSON.kml(dom));
+
+      // ── GPX ───────────────────────────────────────────────────────────────────
+    } else if (filename.endsWith('.gpx')) {
+      const dom = new DOMParser().parseFromString(content, 'text/xml' as any);
+      geojson = JSON.stringify(toGeoJSON.gpx(dom));
+
+      // ── Shapefile (.zip containing .shp + .dbf) ───────────────────────────────
+    } else if (filename.endsWith('.zip')) {
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'shp-'));
+      const zipPath = path.join(tmpDir, 'upload.zip');
+      await fs.writeFile(zipPath, req.file.buffer);
+
+      await execAsync(`unzip -o "${zipPath}" -d "${tmpDir}"`);
+
+      const files = await fs.readdir(tmpDir);
+      const shpFile = files.find(f => f.endsWith('.shp'));
+      if (!shpFile) {
+        await fs.rm(tmpDir, { recursive: true });
+        return res.status(400).send('ZIP does not contain a .shp file');
+      }
+
+      const shpPath = path.join(tmpDir, shpFile);
+      const dbfPath = shpPath.replace('.shp', '.dbf');
+
+      const features: any[] = [];
+      const source = await shapefile.open(shpPath, dbfPath);
+      let result = await source.read();
+      while (!result.done) {
+        features.push(result.value);
+        result = await source.read();
+      }
+
+      geojson = JSON.stringify({ type: 'FeatureCollection', features });
+      await fs.rm(tmpDir, { recursive: true });
+
+      // ── GeoPackage (.gpkg) ────────────────────────────────────────────────────
+    } else if (filename.endsWith('.gpkg')) {
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gpkg-'));
+      const gpkgPath = path.join(tmpDir, 'upload.gpkg');
+      await fs.writeFile(gpkgPath, req.file.buffer);
+
+      const ds = await gdal.openAsync(gpkgPath);
+      const features: any[] = [];
+
+      for (const layer of ds.layers) {
+        for (const feature of layer.features) {
+          const geom = feature.getGeometry();
+          if (!geom) continue;
+          features.push({
+            type: 'Feature',
+            geometry: JSON.parse(geom.toJSON()),
+            properties: feature.fields.toObject()
+          });
+        }
+      }
+
+      geojson = JSON.stringify({ type: 'FeatureCollection', features });
+      ds.close();
+      await fs.rm(tmpDir, { recursive: true });
+
+    } else {
+      return res.status(400).send('Unsupported file type. Use .geojson, .kml, .gpx, .zip (shapefile), or .gpkg');
+    }
+
+    await db
+      .update(areasTable)
+      .set({ geofile: geojson })
+      .where(eq(areasTable.id, Number(id)));
+
+    res.redirect(`/manager/areas/${id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+// ── Delete Geo File ───────────────────────────────────────────────────────────
+
+export async function postDeleteGeofile(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const { id } = req.params;
+
+    const [area] = await db
+      .select()
+      .from(areasTable)
+      .where(eq(areasTable.id, Number(id)))
+      .limit(1);
+
+    if (!area || area.estateId !== user.estateId) return res.status(404).send('Area not found');
+
+    await db
+      .update(areasTable)
+      .set({ geofile: null })
+      .where(eq(areasTable.id, Number(id)));
+
+    res.redirect(`/manager/areas/${id}`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

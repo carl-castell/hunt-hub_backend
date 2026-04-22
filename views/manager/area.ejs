@@ -1,3 +1,4 @@
+<!-- ── Page Header ────────────────────────────────────────────────────────── -->
 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
   <h2 style="margin: 0;"><%= area.name %></h2>
   <button class="outline" data-dialog="rename-area-dialog">Edit</button>
@@ -5,6 +6,34 @@
 </div>
 
 <a href="/manager/estate" role="button" class="outline">← Back to Estate</a>
+
+<!-- ── Geo File Section ────────────────────────────────────────────────────── -->
+<% if (area.geofile) { %>
+
+  <div
+    id="area-map"
+    style="height: 400px; border-radius: 8px; margin: 1.5rem 0 1rem;"
+    data-geojson="<%- encodeURIComponent(area.geofile) %>"
+  ></div>
+
+  <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+    <button class="secondary outline" data-dialog="delete-geofile-dialog">Delete Geo File</button>
+  </div>
+
+<% } else { %>
+
+  <article style="margin: 1.5rem 0 2rem;">
+    <header><strong>No geo file uploaded</strong></header>
+    <p>Upload a geo file to display this area on a map.</p>
+    <form action="/manager/areas/<%= area.id %>/geofile" method="POST" enctype="multipart/form-data">
+      <input type="file" name="geofile" accept=".geojson,.json,.kml,.gpx,.zip,.gpkg" required />
+      <small>Supported formats: .geojson, .kml, .gpx, .gpkg, .zip (zipped shapefile)</small>
+      <button type="submit" style="margin-top: 0.75rem;">Upload Geo File</button>
+    </form>
+  </article>
+
+<% } %>
+
 
 <!-- ── Rename Area Dialog ─────────────────────────────────────────────────── -->
 <dialog id="rename-area-dialog">
@@ -24,6 +53,7 @@
     </form>
   </article>
 </dialog>
+
 
 <!-- ── Delete Area Dialog ─────────────────────────────────────────────────── -->
 <dialog id="delete-area-dialog">
@@ -54,3 +84,95 @@
     </form>
   </article>
 </dialog>
+
+
+<!-- ── Delete Geo File Dialog ─────────────────────────────────────────────── -->
+<dialog id="delete-geofile-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="delete-geofile-dialog"></button>
+      <h3>Delete Geo File</h3>
+    </header>
+    <p>
+      Are you sure you want to remove the geo file from <strong><%= area.name %></strong>?
+      The map will no longer be displayed.
+    </p>
+    <p>Or would you like to replace it with a new file instead?</p>
+    <form action="/manager/areas/<%= area.id %>/geofile" method="POST" enctype="multipart/form-data" style="margin-bottom: 1rem;">
+      <label>
+        Replace with new file
+        <input type="file" name="geofile" accept=".geojson,.json,.kml,.gpx,.zip,.gpkg" required />
+      </label>
+      <small>Supported formats: .geojson, .kml, .gpx, .gpkg, .zip (zipped shapefile)</small>
+      <footer>
+        <button type="submit">Replace</button>
+      </footer>
+    </form>
+    <hr />
+    <form action="/manager/areas/<%= area.id %>/geofile/delete" method="POST">
+      <footer>
+        <button type="button" class="outline" data-close-dialog="delete-geofile-dialog">Cancel</button>
+        <button type="submit" class="contrast">Delete</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+
+<!-- ── Leaflet Map Script ──────────────────────────────────────────────────── -->
+<% if (area.geofile) { %>
+<script>
+  const mapEl = document.getElementById('area-map');
+  const geojsonData = JSON.parse(decodeURIComponent(mapEl.dataset.geojson));
+
+    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  });
+
+  const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19
+  });
+
+  const map = L.map('area-map', { layers: [streets] });
+
+  L.control.layers(
+    { 'Streets': streets, 'Satellite': satellite },
+    {},
+    { position: 'topright' }
+  ).addTo(map);
+
+  // Shade outside first, then draw area on top
+  const outerRing = [
+    [90, -180], [90, 180], [-90, 180], [-90, -180], [90, -180]
+  ];
+
+  const innerRing = geojsonData.features[0].geometry.coordinates[0].map(
+    ([lng, lat]) => [lat, lng]
+  );
+
+  L.polygon([outerRing, innerRing], {
+    color: 'transparent',
+    fillColor: '#000',
+    fillOpacity: 0.35
+  }).addTo(map);
+
+  // Add GeoJSON on top of shading
+  const layer = L.geoJSON(geojsonData, {
+    style: {
+      color: '#e00',
+      weight: 2,
+      fillOpacity: 0
+    },
+    pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
+      radius: 6,
+      color: '#e00',
+      fillColor: '#e00',
+      fillOpacity: 0.8
+    })
+  }).addTo(map);
+
+  map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+
+</script>
+<% } %>

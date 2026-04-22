@@ -17,5 +17,6 @@ declare module 'express-session' {
     user?: SessionUser;
   }
 }
+declare module 'shapefile';
 
 export {};

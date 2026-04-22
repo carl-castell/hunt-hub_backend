@@ -7,6 +7,10 @@ import { getEvents, getEvent, postCreateEvent, postUpdateEvent, postDeleteEvent 
 import { getPeople, postCreateUser } from '../controllers/manager/people';
 import { getUser, postUpdateUserRole, postDeleteUser, postDeactivateUser, postResendActivation, postReactivateUser } from '../controllers/manager/people';
 import { getAccount, postChangePassword } from '../controllers/manager/account';
+import { postUploadGeofile, postDeleteGeofile } from '../controllers/manager/areas';
+import multer from 'multer';
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10_000_000 } });
 
 const managerRouter: Router = express.Router();
 
@@ -30,6 +34,8 @@ managerRouter.post('/guests',                         postCreateGuest);
 managerRouter.get('/guests/:id',                      getGuest);
 managerRouter.post('/guests/:id/update',              postUpdateGuest);
 managerRouter.post('/guests/:id/delete',              postDeleteGuest);
+managerRouter.post('/areas/:id/geofile',         upload.single('geofile'), postUploadGeofile);
+managerRouter.post('/areas/:id/geofile/delete',  postDeleteGeofile);
 
 // Events
 managerRouter.get('/events',                          getEvents);
