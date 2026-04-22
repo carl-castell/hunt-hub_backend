@@ -1,6 +1,5 @@
 CREATE TYPE "public"."role" AS ENUM('admin', 'manager', 'staff', 'guest');--> statement-breakpoint
 CREATE TYPE "public"."status" AS ENUM('open', 'yes', 'no');--> statement-breakpoint
-CREATE TYPE "public"."attachment_entity_type" AS ENUM('hunting_license', 'training_certificate');--> statement-breakpoint
 CREATE TYPE "public"."attachment_kind" AS ENUM('photo', 'document');--> statement-breakpoint
 CREATE TYPE "public"."token_type" AS ENUM('activation', 'password_reset');--> statement-breakpoint
 CREATE TABLE "users" (
@@ -18,10 +17,11 @@ CREATE TABLE "accounts" (
 	"email" varchar(255) NOT NULL,
 	"password" varchar(255),
 	"active" boolean DEFAULT false NOT NULL,
-	CONSTRAINT "accounts_email_unique" UNIQUE("email")
+	CONSTRAINT "accounts_email_unique" UNIQUE("email"),
+	CONSTRAINT "active_requires_password" CHECK ("accounts"."active" = false OR "accounts"."password" IS NOT NULL)
 );
 --> statement-breakpoint
-CREATE TABLE "guests" (
+CREATE TABLE "contacts" (
 	"user_id" integer PRIMARY KEY NOT NULL,
 	"email" varchar(255) NOT NULL,
 	"phone" varchar(255),
@@ -38,12 +38,12 @@ CREATE TABLE "drives" (
 --> statement-breakpoint
 CREATE TABLE "estates" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "estates_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"name" varchar(256)
+	"name" varchar(256) NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "events" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "events_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"estate_id" integer,
+	"estate_id" integer NOT NULL,
 	"event_name" varchar(255) NOT NULL,
 	"date" date NOT NULL,
 	"time" time NOT NULL
@@ -57,17 +57,15 @@ CREATE TABLE "invitations" (
 	"rsvp_date" date NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "attachments" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "attachments_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"estate_id" integer NOT NULL,
-	"entity_type" "attachment_entity_type" NOT NULL,
-	"entity_id" integer NOT NULL,
+CREATE TABLE "hunting_license_attachments" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "hunting_license_attachments_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"kind" "attachment_kind" NOT NULL,
 	"key" text NOT NULL,
 	"content_type" text NOT NULL,
 	"original_name" text NOT NULL,
 	"size_bytes" integer NOT NULL,
-	"upload_date" timestamp DEFAULT now() NOT NULL
+	"upload_date" timestamp DEFAULT now() NOT NULL,
+	"license_id" integer NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "hunting_licenses" (
@@ -75,8 +73,20 @@ CREATE TABLE "hunting_licenses" (
 	"estate_id" integer NOT NULL,
 	"user_id" integer NOT NULL,
 	"checked" boolean DEFAULT false NOT NULL,
+	"checked_at" timestamp,
 	"expiry_date" date NOT NULL,
 	"upload_date" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "training_certificate_attachments" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "training_certificate_attachments_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"kind" "attachment_kind" NOT NULL,
+	"key" text NOT NULL,
+	"content_type" text NOT NULL,
+	"original_name" text NOT NULL,
+	"size_bytes" integer NOT NULL,
+	"upload_date" timestamp DEFAULT now() NOT NULL,
+	"cert_id" integer NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "training_certificates" (
@@ -84,6 +94,7 @@ CREATE TABLE "training_certificates" (
 	"estate_id" integer NOT NULL,
 	"user_id" integer NOT NULL,
 	"checked" boolean DEFAULT false NOT NULL,
+	"checked_at" timestamp,
 	"issue_date" date NOT NULL,
 	"upload_date" timestamp DEFAULT now() NOT NULL
 );
@@ -97,7 +108,7 @@ CREATE TABLE "stands" (
 --> statement-breakpoint
 CREATE TABLE "areas" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "areas_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"estate_id" integer,
+	"estate_id" integer NOT NULL,
 	"name" varchar(255) NOT NULL
 );
 --> statement-breakpoint
@@ -119,18 +130,24 @@ CREATE TABLE "audit_logs" (
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "templates" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "templates_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"estate_id" integer NOT NULL,
+	"name" varchar(255) NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "template_groups" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "template_groups_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"area_id" integer NOT NULL,
+	"template_id" integer NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"number" integer NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "template_stand_assignments" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "template_stand_assignments_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"name" varchar(255) NOT NULL,
-	"template_group_id" integer NOT NULL,
-	"stand_id" integer NOT NULL
+	"template_id" integer NOT NULL,
+	"stand_id" integer NOT NULL,
+	"template_group_id" integer
 );
 --> statement-breakpoint
 CREATE TABLE "drive_groups" (
@@ -142,34 +159,49 @@ CREATE TABLE "drive_groups" (
 --> statement-breakpoint
 CREATE TABLE "drive_stand_assignments" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "drive_stand_assignments_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"drive_group_id" integer NOT NULL,
+	"drive_id" integer NOT NULL,
 	"stand_id" integer NOT NULL,
+	"drive_group_id" integer,
 	"user_id" integer
 );
 --> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_estate_id_estates_id_fk" FOREIGN KEY ("estate_id") REFERENCES "public"."estates"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "guests" ADD CONSTRAINT "guests_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "invitations" ADD CONSTRAINT "invitations_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "invitations" ADD CONSTRAINT "invitations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "contacts" ADD CONSTRAINT "contacts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "drives" ADD CONSTRAINT "drives_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "events" ADD CONSTRAINT "events_estate_id_estates_id_fk" FOREIGN KEY ("estate_id") REFERENCES "public"."estates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "hunting_license_attachments" ADD CONSTRAINT "hunting_license_attachments_license_id_hunting_licenses_id_fk" FOREIGN KEY ("license_id") REFERENCES "public"."hunting_licenses"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "hunting_licenses" ADD CONSTRAINT "hunting_licenses_estate_id_estates_id_fk" FOREIGN KEY ("estate_id") REFERENCES "public"."estates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "hunting_licenses" ADD CONSTRAINT "hunting_licenses_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "training_certificate_attachments" ADD CONSTRAINT "training_certificate_attachments_cert_id_training_certificates_id_fk" FOREIGN KEY ("cert_id") REFERENCES "public"."training_certificates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "training_certificates" ADD CONSTRAINT "training_certificates_estate_id_estates_id_fk" FOREIGN KEY ("estate_id") REFERENCES "public"."estates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "training_certificates" ADD CONSTRAINT "training_certificates_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "stands" ADD CONSTRAINT "stands_area_id_areas_id_fk" FOREIGN KEY ("area_id") REFERENCES "public"."areas"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "areas" ADD CONSTRAINT "areas_estate_id_estates_id_fk" FOREIGN KEY ("estate_id") REFERENCES "public"."estates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_auth_tokens" ADD CONSTRAINT "user_auth_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "template_groups" ADD CONSTRAINT "template_groups_area_id_areas_id_fk" FOREIGN KEY ("area_id") REFERENCES "public"."areas"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "template_stand_assignments" ADD CONSTRAINT "template_stand_assignments_template_group_id_template_groups_id_fk" FOREIGN KEY ("template_group_id") REFERENCES "public"."template_groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "templates" ADD CONSTRAINT "templates_estate_id_estates_id_fk" FOREIGN KEY ("estate_id") REFERENCES "public"."estates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "template_groups" ADD CONSTRAINT "template_groups_template_id_templates_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."templates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "template_stand_assignments" ADD CONSTRAINT "template_stand_assignments_template_id_templates_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."templates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "template_stand_assignments" ADD CONSTRAINT "template_stand_assignments_stand_id_stands_id_fk" FOREIGN KEY ("stand_id") REFERENCES "public"."stands"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "template_stand_assignments" ADD CONSTRAINT "template_stand_assignments_template_group_id_template_groups_id_fk" FOREIGN KEY ("template_group_id") REFERENCES "public"."template_groups"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "drive_groups" ADD CONSTRAINT "drive_groups_drive_id_drives_id_fk" FOREIGN KEY ("drive_id") REFERENCES "public"."drives"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "drive_groups" ADD CONSTRAINT "drive_groups_leader_id_users_id_fk" FOREIGN KEY ("leader_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "drive_stand_assignments" ADD CONSTRAINT "drive_stand_assignments_drive_group_id_drive_groups_id_fk" FOREIGN KEY ("drive_group_id") REFERENCES "public"."drive_groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "drive_stand_assignments" ADD CONSTRAINT "drive_stand_assignments_drive_id_drives_id_fk" FOREIGN KEY ("drive_id") REFERENCES "public"."drives"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "drive_stand_assignments" ADD CONSTRAINT "drive_stand_assignments_stand_id_stands_id_fk" FOREIGN KEY ("stand_id") REFERENCES "public"."stands"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "drive_stand_assignments" ADD CONSTRAINT "drive_stand_assignments_drive_group_id_drive_groups_id_fk" FOREIGN KEY ("drive_group_id") REFERENCES "public"."drive_groups"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "drive_stand_assignments" ADD CONSTRAINT "drive_stand_assignments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "idx_attachments_entity" ON "attachments" USING btree ("estate_id","entity_type","entity_id");--> statement-breakpoint
-CREATE INDEX "idx_attachments_kind" ON "attachments" USING btree ("estate_id","entity_type","entity_id","kind");--> statement-breakpoint
-CREATE INDEX "idx_attachments_key" ON "attachments" USING btree ("key");--> statement-breakpoint
+CREATE INDEX "idx_hl_attachments_license_id" ON "hunting_license_attachments" USING btree ("license_id");--> statement-breakpoint
+CREATE INDEX "idx_hl_attachments_kind" ON "hunting_license_attachments" USING btree ("license_id","kind");--> statement-breakpoint
+CREATE INDEX "idx_hl_attachments_key" ON "hunting_license_attachments" USING btree ("key");--> statement-breakpoint
 CREATE INDEX "idx_hunting_licenses_estate_id" ON "hunting_licenses" USING btree ("estate_id");--> statement-breakpoint
 CREATE INDEX "idx_hunting_licenses_user_id" ON "hunting_licenses" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_hunting_licenses_expiry_date" ON "hunting_licenses" USING btree ("expiry_date");--> statement-breakpoint
+CREATE INDEX "idx_tc_attachments_cert_id" ON "training_certificate_attachments" USING btree ("cert_id");--> statement-breakpoint
+CREATE INDEX "idx_tc_attachments_kind" ON "training_certificate_attachments" USING btree ("cert_id","kind");--> statement-breakpoint
+CREATE INDEX "idx_tc_attachments_key" ON "training_certificate_attachments" USING btree ("key");--> statement-breakpoint
 CREATE INDEX "idx_training_certificates_estate_id" ON "training_certificates" USING btree ("estate_id");--> statement-breakpoint
 CREATE INDEX "idx_training_certificates_user_id" ON "training_certificates" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_training_certificates_issue_date" ON "training_certificates" USING btree ("issue_date");

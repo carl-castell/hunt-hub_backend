@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import { integer, pgTable } from "drizzle-orm/pg-core";
 import { drivesTable } from "./drives";
 import { usersTable } from "./users";
+import { driveStandAssignmentsTable } from "./drive_stand_assignments";
 
 export const driveGroupsTable = pgTable("drive_groups", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -10,7 +11,7 @@ export const driveGroupsTable = pgTable("drive_groups", {
   number: integer().notNull(),
 });
 
-export const driveGroupsRelations = relations(driveGroupsTable, ({ one }) => ({
+export const driveGroupsRelations = relations(driveGroupsTable, ({ one, many }) => ({
   drive: one(drivesTable, {
     fields: [driveGroupsTable.driveId],
     references: [drivesTable.id],
@@ -19,4 +20,5 @@ export const driveGroupsRelations = relations(driveGroupsTable, ({ one }) => ({
     fields: [driveGroupsTable.leaderId],
     references: [usersTable.id],
   }),
+  standAssignments: many(driveStandAssignmentsTable), // ← was missing
 }));

@@ -9,7 +9,7 @@ import { drivesTable } from "./drives";
 
 export const eventsTable = pgTable("events", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  estateId: integer('estate_id').notNull(),
+  estateId: integer('estate_id').notNull().references(() => estatesTable.id, { onDelete: 'cascade' }),
   eventName: varchar('event_name',{ length: 255 }).notNull(),
   date: date().notNull(),
   time: time().notNull(),

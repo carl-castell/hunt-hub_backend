@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable } from '../../db/schema/users';
-import { guestsTable } from '../../db/schema/guests';
+import { contactsTable } from '../../db/schema/contacts';
 import { z } from 'zod';
 
 const createGuestSchema = z.object({
@@ -23,11 +23,11 @@ export async function getGuests(req: Request, res: Response) {
 
     let rows = await db
       .select()
-      .from(guestsTable)
-      .innerJoin(usersTable, eq(guestsTable.userId, usersTable.id))
+      .from(contactsTable)
+      .innerJoin(usersTable, eq(contactsTable.userId, usersTable.id))
       .where(eq(usersTable.estateId, user.estateId!));
 
-    let guests = rows.map(r => ({ ...r.users, ...r.guests }));
+    let guests = rows.map(r => ({ ...r.users, ...r.contacts }));
 
     if (search && search.trim() !== '') {
       const term = search.trim().toLowerCase();
@@ -75,7 +75,7 @@ export async function postCreateGuest(req: Request, res: Response) {
       .returning();
 
     await db
-      .insert(guestsTable)
+      .insert(contactsTable)
       .values({ userId: newUser.id, email, phone, dateOfBirth, rating });
 
     res.redirect(`/manager/guests/${newUser.id}`);
@@ -92,14 +92,14 @@ export async function getGuest(req: Request, res: Response) {
 
     const [row] = await db
       .select()
-      .from(guestsTable)
-      .innerJoin(usersTable, eq(guestsTable.userId, usersTable.id))
-      .where(eq(guestsTable.userId, Number(id)))
+      .from(contactsTable)
+      .innerJoin(usersTable, eq(contactsTable.userId, usersTable.id))
+      .where(eq(contactsTable.userId, Number(id)))
       .limit(1);
 
     if (!row || row.users.estateId !== user.estateId) return res.status(404).send('Guest not found');
 
-    const guest = { ...row.users, ...row.guests };
+    const guest = { ...row.users, ...row.contacts };
 
     res.render('manager/guest', { title: 'Guest', user, guest });
   } catch (err) {
@@ -115,9 +115,9 @@ export async function postUpdateGuest(req: Request, res: Response) {
 
     const [row] = await db
       .select()
-      .from(guestsTable)
-      .innerJoin(usersTable, eq(guestsTable.userId, usersTable.id))
-      .where(eq(guestsTable.userId, Number(id)))
+      .from(contactsTable)
+      .innerJoin(usersTable, eq(contactsTable.userId, usersTable.id))
+      .where(eq(contactsTable.userId, Number(id)))
       .limit(1);
 
     if (!row || row.users.estateId !== user.estateId) return res.status(404).send('Guest not found');
@@ -133,9 +133,9 @@ export async function postUpdateGuest(req: Request, res: Response) {
       .where(eq(usersTable.id, Number(id)));
 
     await db
-      .update(guestsTable)
+      .update(contactsTable)
       .set({ email, phone, dateOfBirth, rating })
-      .where(eq(guestsTable.userId, Number(id)));
+      .where(eq(contactsTable.userId, Number(id)));
 
     res.redirect(`/manager/guests/${id}`);
   } catch (err) {
@@ -151,14 +151,14 @@ export async function postDeleteGuest(req: Request, res: Response) {
 
     const [row] = await db
       .select()
-      .from(guestsTable)
-      .innerJoin(usersTable, eq(guestsTable.userId, usersTable.id))
-      .where(eq(guestsTable.userId, Number(id)))
+      .from(contactsTable)
+      .innerJoin(usersTable, eq(contactsTable.userId, usersTable.id))
+      .where(eq(contactsTable.userId, Number(id)))
       .limit(1);
 
     if (!row || row.users.estateId !== user.estateId) return res.status(404).send('Guest not found');
 
-    // Cascades to guestsTable via FK
+    // Cascades to contactsTable via FK
     await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
 
     res.redirect('/manager/guests');

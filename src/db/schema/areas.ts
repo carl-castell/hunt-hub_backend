@@ -5,7 +5,7 @@ import { standsTable } from "./stands";
 
 export const areasTable = pgTable("areas", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  estateId: integer('estate_id'),
+  estateId: integer('estate_id').notNull().references(() => estatesTable.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
 });
 

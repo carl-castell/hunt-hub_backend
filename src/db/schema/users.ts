@@ -3,7 +3,7 @@ import { relations, sql } from 'drizzle-orm';
 import { estatesTable } from "./estates";
 import { userAuthTokensTable } from "./user_auth_tokens";
 import { accountsTable } from "./accounts";
-import { guestsTable } from "./guests";
+import { contactsTable } from "./contacts";
 import { auditLogsTable } from "./audit_logs";
 import { driveGroupsTable } from "./drive_groups";
 import { driveStandAssignmentsTable } from "./drive_stand_assignments";
@@ -34,9 +34,9 @@ export const usersRelations = relations(usersTable, ({ one, many }) => ({
     fields: [usersTable.id],
     references: [accountsTable.userId],
   }),
-  guest: one(guestsTable, {
+  contact: one(contactsTable, {
     fields: [usersTable.id],
-    references: [guestsTable.userId],
+    references: [contactsTable.userId],
   }),
 
   authTokens: many(userAuthTokensTable),

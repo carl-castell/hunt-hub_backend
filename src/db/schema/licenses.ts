@@ -9,6 +9,7 @@ import {
   text,
   index,
 } from "drizzle-orm/pg-core";
+import { estatesTable } from "./estates";
 import { usersTable } from "./users";
 
 // ─── Shared attachment columns ───────────────────────────────────────────────
@@ -17,7 +18,6 @@ export const attachmentKind = pgEnum("attachment_kind", ["photo", "document"]);
 
 const attachmentColumns = {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  estateId: integer("estate_id").notNull(),
   kind: attachmentKind("kind").notNull(),
   key: text("key").notNull(),
   contentType: text("content_type").notNull(),
@@ -32,7 +32,7 @@ export const huntingLicensesTable = pgTable(
   "hunting_licenses",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    estateId: integer("estate_id").notNull(),
+    estateId: integer("estate_id").notNull().references(() => estatesTable.id, { onDelete: "cascade" }),
     userId: integer("user_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
@@ -69,7 +69,7 @@ export const trainingCertificatesTable = pgTable(
   "training_certificates",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    estateId: integer("estate_id").notNull(),
+    estateId: integer("estate_id").notNull().references(() => estatesTable.id, { onDelete: "cascade" }),
     userId: integer("user_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
@@ -105,6 +105,10 @@ export const trainingCertificateAttachmentsTable = pgTable(
 export const huntingLicensesRelations = relations(
   huntingLicensesTable,
   ({ one, many }) => ({
+    estate: one(estatesTable, {
+      fields: [huntingLicensesTable.estateId],
+      references: [estatesTable.id],
+    }),
     user: one(usersTable, {
       fields: [huntingLicensesTable.userId],
       references: [usersTable.id],
@@ -126,6 +130,10 @@ export const huntingLicenseAttachmentsRelations = relations(
 export const trainingCertificatesRelations = relations(
   trainingCertificatesTable,
   ({ one, many }) => ({
+    estate: one(estatesTable, {
+      fields: [trainingCertificatesTable.estateId],
+      references: [estatesTable.id],
+    }),
     user: one(usersTable, {
       fields: [trainingCertificatesTable.userId],
       references: [usersTable.id],

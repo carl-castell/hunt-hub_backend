@@ -2,7 +2,7 @@ import { integer, pgTable, varchar, date } from "drizzle-orm/pg-core";
 import { relations } from 'drizzle-orm';
 import { usersTable } from "./users";
 
-export const guestsTable = pgTable("guests", {
+export const contactsTable = pgTable("contacts", {
   userId: integer('user_id').primaryKey().references(() => usersTable.id, { onDelete: 'cascade' }),
   email: varchar({ length: 255 }).notNull(),
   phone: varchar({ length: 255 }),
@@ -10,9 +10,9 @@ export const guestsTable = pgTable("guests", {
   rating: integer(),
 });
 
-export const guestsRelations = relations(guestsTable, ({ one, many }) => ({
+export const contactsRelations = relations(contactsTable, ({ one }) => ({
   user: one(usersTable, {
-    fields: [guestsTable.userId],
+    fields: [contactsTable.userId],
     references: [usersTable.id],
   }),
 }));

@@ -7,8 +7,8 @@ export const statusEnum = pgEnum('status', ['open', 'yes', 'no']);
 
 export const invitationsTable = pgTable("invitations", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  eventId: integer("event_id").notNull().references(() => eventsTable.id),
-  userId: integer("user_id").notNull().references(() => usersTable.id),
+  eventId: integer("event_id").notNull().references(() => eventsTable.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   status: statusEnum().default('open').notNull(),
   rsvpDate: date("rsvp_date").notNull(),
 });

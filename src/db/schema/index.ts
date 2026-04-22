@@ -1,6 +1,6 @@
 export * from './users';
 export * from './accounts';
-export * from './guests';
+export * from './contacts';
 export * from './drives';
 export * from './estates';
 export * from './events';
@@ -10,8 +10,8 @@ export * from './stands';
 export * from './areas';
 export * from './user_auth_tokens';
 export * from './audit_logs';
+export * from './templates';
 export * from './template_groups';
 export * from './template_stand_assignments';
 export * from './drive_groups';
 export * from './drive_stand_assignments';
-

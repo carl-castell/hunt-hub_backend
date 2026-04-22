@@ -45,20 +45,30 @@ async function main() {
 
   try {
     for (const table of [
+      schema.driveStandAssignmentsTable,
+      schema.driveGroupsTable,
+      schema.templateStandAssignmentsTable,
+      schema.templateGroupsTable,
+      schema.templatesTable,
+      schema.trainingCertificateAttachmentsTable,
+      schema.huntingLicenseAttachmentsTable,
       schema.trainingCertificatesTable,
       schema.huntingLicensesTable,
+      schema.drivesTable,
       schema.standsTable,
       schema.areasTable,
-      schema.drivesTable,
       schema.invitationsTable,
       schema.eventsTable,
+      schema.userAuthTokensTable,
+      schema.auditLogsTable,
       schema.accountsTable,
-      schema.guestsTable,
+      schema.contactsTable,
       schema.usersTable,
       schema.estatesTable,
     ]) {
       await resetTable(table);
     }
+
     console.log('> truncated tables \n> restarted identity \n');
   } catch (error) {
     console.error('Error resetting tables:', error);
