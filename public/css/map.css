@@ -97,3 +97,14 @@
 [data-map-scope] .leaflet-control-layers-expanded a {
   all: unset !important;
 }
+
+/* --- Harden layers popup against global form styles (Pico) --- */
+[data-map-scope] .leaflet-control-layers.leaflet-control-layers-expanded input {
+  margin: 0 !important;
+  accent-color: inherit; /* or set to your brand color */
+}
+
+[data-map-scope] .leaflet-control-layers.leaflet-control-layers-expanded form {
+  margin: 0 !important;
+}
+
