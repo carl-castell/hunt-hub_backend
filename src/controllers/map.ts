@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { areasTable } from '@/db/schema/areas';
 
@@ -41,7 +41,12 @@ export async function getAreaMapData(req: Request, res: Response) {
     const { id } = req.params;
 
     const [area] = await db
-      .select()
+      .select({
+        id: areasTable.id,
+        name: areasTable.name,
+        estateId: areasTable.estateId,
+        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
+      })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
       .limit(1);

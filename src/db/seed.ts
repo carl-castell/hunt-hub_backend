@@ -43,6 +43,23 @@ async function main() {
   await db.execute(sql`CREATE EXTENSION IF NOT EXISTS postgis`);
   console.log('> PostGIS extension enabled');
 
+  await db.execute(sql`
+    ALTER TABLE areas
+    ALTER COLUMN geofile
+    SET DATA TYPE geometry(GeometryCollection, 4326)
+    USING CASE
+      WHEN geofile IS NOT NULL THEN ST_GeomFromGeoJSON(geofile)
+      ELSE NULL
+    END
+  `);
+  console.log('> areas.geofile migrated to geometry(GeometryCollection, 4326)');
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS areas_geofile_gist ON areas USING GIST (geofile)
+  `);
+  console.log('> GIST index created on areas.geofile');
+
+
   try {
     for (const table of [
       schema.driveStandAssignmentsTable,

@@ -14,6 +14,7 @@
 <div
   id="<%= mapId %>"
   data-map
+  data-map-scope
   data-height="<%= mapHeight %>"
   data-tile="<%= mapTile %>"
   data-layers="<%= mapLayers %>"
@@ -21,6 +22,7 @@
   <% if (mapDataUrl) { %>data-url="<%= mapDataUrl %>"<% } %>
   style="width:100%;border-radius:var(--pico-border-radius,4px);overflow:hidden;"
 ></div>
+
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/js/map.js"></script>

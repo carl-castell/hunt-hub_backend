@@ -92,28 +92,50 @@
     }
   }
 
-  // ── Render GeoJSON ─────────────────────────────────────────────────────────
+    // ── Render GeoJSON ─────────────────────────────────────────────────────────
   function renderGeoJSON(map, geojson) {
-    const areaCoords =
-      geojson.type === 'FeatureCollection'
-        ? geojson.features[0]?.geometry?.coordinates
-        : geojson.geometry?.coordinates || geojson.coordinates;
+    // ST_AsGeoJSON returns a bare GeometryCollection — normalise to FeatureCollection
+    let featureCollection;
+    if (geojson.type === 'GeometryCollection') {
+      featureCollection = {
+        type: 'FeatureCollection',
+        features: geojson.geometries.map(function (g) {
+          return { type: 'Feature', geometry: g, properties: {} };
+        }),
+      };
+    } else if (geojson.type === 'FeatureCollection') {
+      featureCollection = geojson;
+    } else if (geojson.type === 'Feature') {
+      featureCollection = { type: 'FeatureCollection', features: [geojson] };
+    } else {
+      // bare geometry
+      featureCollection = {
+        type: 'FeatureCollection',
+        features: [{ type: 'Feature', geometry: geojson, properties: {} }],
+      };
+    }
 
-    if (areaCoords) {
+    // Collect all coordinates for the mask
+    const allCoords = featureCollection.features
+      .map(function (f) { return f.geometry?.coordinates; })
+      .filter(Boolean);
+
+    if (allCoords.length) {
       const worldRing = [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]];
       L.geoJSON(
-        { type: 'Feature', geometry: { type: 'Polygon', coordinates: [worldRing, ...areaCoords] } },
+        { type: 'Feature', geometry: { type: 'Polygon', coordinates: [worldRing, ...allCoords.flat()] } },
         { style: { color: 'transparent', fillColor: '#000', fillOpacity: 0.3 } }
       ).addTo(map);
     }
 
-    const areaLayer = L.geoJSON(geojson, {
+    const areaLayer = L.geoJSON(featureCollection, {
       style: { color: '#e63946', weight: 2, fillOpacity: 0 },
     }).addTo(map);
 
     map.fitBounds(areaLayer.getBounds(), { padding: [20, 20] });
   }
 
+  
   // ── Point placement ────────────────────────────────────────────────────────
   function initPointMode(map, container) {
     let pendingMarker = null;

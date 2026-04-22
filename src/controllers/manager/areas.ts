@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { areasTable } from '@/db/schema/areas';
 import { standsTable } from '@/db/schema/stands';
@@ -14,8 +14,6 @@ import path from 'path';
 import os from 'os';
 import * as shapefile from 'shapefile';
 
-
-
 const execAsync = promisify(exec);
 
 const areaNameSchema = z.object({
@@ -26,6 +24,36 @@ const deleteConfirmSchema = z.object({
   confirm: z.string(),
 });
 
+// ── Normalise any GeoJSON to a bare GeometryCollection ────────────────────────
+
+function toGeometryCollection(geojson: string): string {
+  const parsed = JSON.parse(geojson);
+
+  if (parsed.type === 'FeatureCollection') {
+    return JSON.stringify({
+      type: 'GeometryCollection',
+      geometries: parsed.features.map((f: any) => f.geometry).filter(Boolean),
+    });
+  }
+
+  if (parsed.type === 'Feature') {
+    return JSON.stringify({
+      type: 'GeometryCollection',
+      geometries: [parsed.geometry].filter(Boolean),
+    });
+  }
+
+  // Already a bare geometry — wrap it for consistency
+  if (parsed.type !== 'GeometryCollection') {
+    return JSON.stringify({
+      type: 'GeometryCollection',
+      geometries: [parsed],
+    });
+  }
+
+  return geojson;
+}
+
 // ── Get Area ─────────────────────────────────────────────────────────────────
 
 export async function getArea(req: Request, res: Response) {
@@ -34,7 +62,12 @@ export async function getArea(req: Request, res: Response) {
     const { id } = req.params;
 
     const [area] = await db
-      .select()
+      .select({
+        id: areasTable.id,
+        name: areasTable.name,
+        estateId: areasTable.estateId,
+        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
+      })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
       .limit(1);
@@ -77,7 +110,12 @@ export async function postRenameArea(req: Request, res: Response) {
     const { id } = req.params;
 
     const [area] = await db
-      .select()
+      .select({
+        id: areasTable.id,
+        name: areasTable.name,
+        estateId: areasTable.estateId,
+        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
+      })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
       .limit(1);
@@ -107,7 +145,12 @@ export async function postDeleteArea(req: Request, res: Response) {
     const { id } = req.params;
 
     const [area] = await db
-      .select()
+      .select({
+        id: areasTable.id,
+        name: areasTable.name,
+        estateId: areasTable.estateId,
+        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
+      })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
       .limit(1);
@@ -137,7 +180,12 @@ export async function postUploadGeofile(req: Request, res: Response) {
     const { id } = req.params;
 
     const [area] = await db
-      .select()
+      .select({
+        id: areasTable.id,
+        name: areasTable.name,
+        estateId: areasTable.estateId,
+        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
+      })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
       .limit(1);
@@ -154,18 +202,17 @@ export async function postUploadGeofile(req: Request, res: Response) {
       JSON.parse(content); // validate
       geojson = content;
 
-      // ── KML ───────────────────────────────────────────────────────────────────
+    // ── KML ───────────────────────────────────────────────────────────────────
     } else if (filename.endsWith('.kml')) {
       const dom = new DOMParser().parseFromString(content, 'text/xml' as any);
-
       geojson = JSON.stringify(toGeoJSON.kml(dom));
 
-      // ── GPX ───────────────────────────────────────────────────────────────────
+    // ── GPX ───────────────────────────────────────────────────────────────────
     } else if (filename.endsWith('.gpx')) {
       const dom = new DOMParser().parseFromString(content, 'text/xml' as any);
       geojson = JSON.stringify(toGeoJSON.gpx(dom));
 
-      // ── Shapefile (.zip containing .shp + .dbf) ───────────────────────────────
+    // ── Shapefile (.zip containing .shp + .dbf) ───────────────────────────────
     } else if (filename.endsWith('.zip')) {
       const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'shp-'));
       const zipPath = path.join(tmpDir, 'upload.zip');
@@ -194,7 +241,7 @@ export async function postUploadGeofile(req: Request, res: Response) {
       geojson = JSON.stringify({ type: 'FeatureCollection', features });
       await fs.rm(tmpDir, { recursive: true });
 
-      // ── GeoPackage (.gpkg) ────────────────────────────────────────────────────
+    // ── GeoPackage (.gpkg) ────────────────────────────────────────────────────
     } else if (filename.endsWith('.gpkg')) {
       const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gpkg-'));
       const gpkgPath = path.join(tmpDir, 'upload.gpkg');
@@ -223,9 +270,11 @@ export async function postUploadGeofile(req: Request, res: Response) {
       return res.status(400).send('Unsupported file type. Use .geojson, .kml, .gpx, .zip (shapefile), or .gpkg');
     }
 
+    const geometryCollection = toGeometryCollection(geojson);
+
     await db
       .update(areasTable)
-      .set({ geofile: geojson })
+      .set({ geofile: sql`ST_GeomFromGeoJSON(${geometryCollection})` })
       .where(eq(areasTable.id, Number(id)));
 
     res.redirect(`/manager/areas/${id}`);
@@ -243,7 +292,12 @@ export async function postDeleteGeofile(req: Request, res: Response) {
     const { id } = req.params;
 
     const [area] = await db
-      .select()
+      .select({
+        id: areasTable.id,
+        name: areasTable.name,
+        estateId: areasTable.estateId,
+        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
+      })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
       .limit(1);

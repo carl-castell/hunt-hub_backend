@@ -1,14 +1,19 @@
-import { integer, pgTable, varchar, text } from "drizzle-orm/pg-core";
+import { integer, pgTable, varchar, customType } from "drizzle-orm/pg-core";
 import { relations } from 'drizzle-orm';
 import { estatesTable } from "./estates";
 import { standsTable } from "./stands";
+
+const geometry = customType<{ data: string; driverData: string }>({
+  dataType() {
+    return 'geometry(GeometryCollection, 4326)';
+  },
+});
 
 export const areasTable = pgTable("areas", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   estateId: integer('estate_id').notNull().references(() => estatesTable.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
-  geofile: text('geofile'),
-  geofileType: varchar('geofile_type', { length: 10 }),
+  geofile: geometry('geofile'),
 });
 
 export const areasRelations = relations(areasTable, ({ one, many }) => ({
