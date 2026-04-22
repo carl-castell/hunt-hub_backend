@@ -16,10 +16,12 @@ import adminRouter from "./routes/admin";
 import managerRouter from "./routes/manager";
 import usersRouter from './routes/users';
 import activateRouter from './routes/activate';
+import mapRouter from "./routes/map";
 
 import { estatesTable } from './db/schema/estates';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
+
 
 const app: Express = express();
 app.set('trust proxy', 1);
@@ -43,11 +45,24 @@ app.use(helmet({
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"],
       "style-src": ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
-      "img-src": ["'self'", "data:", "https://*.opentopomap.org", "https://server.arcgisonline.com", "https://unpkg.com"],
-      "connect-src": ["'self'", "https://unpkg.com", "https://*.opentopomap.org"],
+      "img-src": [
+        "'self'", "data:",
+        "https://*.tile.openstreetmap.org",
+        "https://*.opentopomap.org",
+        "https://server.arcgisonline.com",
+        "https://unpkg.com",
+      ],
+      "connect-src": [
+        "'self'",
+        "https://unpkg.com",
+        "https://*.tile.openstreetmap.org",
+        "https://*.opentopomap.org",
+        "https://server.arcgisonline.com",
+      ],
     },
   },
 }));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -75,6 +90,7 @@ app.use(express.static(path.join(process.cwd(), "public")));
 app.use("/", homeRouter);
 app.use("/", authRouter);
 app.use("/admin", requireAdmin, adminRouter);
+app.use('/map', requireAuth, mapRouter);
 
 app.use('/manager', requireManager, async (req, res, next) => {
   res.locals.layout = 'manager/layout';

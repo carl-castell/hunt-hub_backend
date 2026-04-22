@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { eq } from 'drizzle-orm';
-import { db } from '../../db';
-import { areasTable } from '../../db/schema/areas';
-import { standsTable } from '../../db/schema/stands';
+import { db } from '@/db';
+import { areasTable } from '@/db/schema/areas';
+import { standsTable } from '@/db/schema/stands';
 import { z } from 'zod';
 import toGeoJSON from '@tmcw/togeojson';
 import { DOMParser } from '@xmldom/xmldom';
@@ -12,8 +12,8 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-
 import * as shapefile from 'shapefile';
+
 
 
 const execAsync = promisify(exec);
@@ -41,68 +41,7 @@ export async function getArea(req: Request, res: Response) {
 
     if (!area || area.estateId !== user.estateId) return res.status(404).send('Area not found');
 
-    res.render('manager/area', {
-      title: 'Areas',
-      user,
-      area,
-      extraStyles: area.geofile ? `
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    .leaflet-control-zoom a {
-      all: revert;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: 26px !important;
-      height: 26px !important;
-      font-size: 18px !important;
-      line-height: 26px !important;
-      color: #444 !important;
-      background-color: #fff !important;
-      border: none !important;
-      text-decoration: none !important;
-      font-weight: bold !important;
-    }
-    .leaflet-control-zoom a:hover {
-      background-color: #f4f4f4 !important;
-      color: #000 !important;
-    }
-    .leaflet-control-layers-toggle {
-      all: revert;
-      width: 36px !important;
-      height: 36px !important;
-      background-image: url('https://unpkg.com/leaflet@1.9.4/dist/images/layers.png') !important;
-      background-size: 26px !important;
-      background-repeat: no-repeat !important;
-      background-position: center !important;
-      background-color: #fff !important;
-      display: block !important;
-    }
-    .leaflet-bar button {
-      all: revert;
-      width: 26px !important;
-      height: 26px !important;
-      font-size: 16px !important;
-      cursor: pointer !important;
-      background: #fff !important;
-      border: none !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      padding: 0 !important;
-      margin: 0 !important;
-    }
-    .leaflet-bar button:hover {
-      background: #f4f4f4 !important;
-    }
-  </style>
-` : '',
-
-
-      extraScripts: area.geofile ? '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>' : '',
-    });
-
-
+    res.render('manager/area', { title: 'Areas', user, area });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

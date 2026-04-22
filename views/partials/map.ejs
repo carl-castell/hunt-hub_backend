@@ -1,0 +1,26 @@
+<%
+  const mapId      = locals.mapId      || 'map-' + Math.random().toString(36).slice(2, 7);
+  const mapHeight  = locals.mapHeight  || '400px';
+  const mapTile    = locals.mapTile    || 'osm';
+  const mapLayers  = (locals.mapLayers || ['osm', 'topo', 'satellite']).join(',');
+  const mapMode    = locals.mapMode    || 'view';
+  const mapDataUrl = locals.mapDataUrl || '';
+%>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="/css/map.css" />
+
+
+<div
+  id="<%= mapId %>"
+  data-map
+  data-height="<%= mapHeight %>"
+  data-tile="<%= mapTile %>"
+  data-layers="<%= mapLayers %>"
+  data-mode="<%= mapMode %>"
+  <% if (mapDataUrl) { %>data-url="<%= mapDataUrl %>"<% } %>
+  style="width:100%;border-radius:var(--pico-border-radius,4px);overflow:hidden;"
+></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/map.js"></script>

@@ -10,13 +10,20 @@
 <!-- ── Geo File Section ────────────────────────────────────────────────────── -->
 <% if (area.geofile) { %>
 
-  <div
-    id="area-map"
-    style="height: 400px; border-radius: 8px; margin: 1.5rem 0 1rem;"
-    data-geojson="<%- encodeURIComponent(area.geofile) %>"
-  ></div>
+  <% if (area.geofile) { %>
+  <div style="margin-top: 1.5rem;">
+    <%- include('../partials/map', {
+      mapId:      'area-map',
+      mapHeight:  '450px',
+      mapTile:    'topo',
+      mapLayers:  ['osm', 'topo', 'satellite'],
+      mapMode:    'view',
+      mapDataUrl: `/map/area/${area.id}`,
+    }) %>
+  </div>
+<% } %>
 
-  <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+  <div style="display: flex; gap: 1rem; margin: 1rem 0 2rem;">
     <button class="secondary outline" data-dialog="delete-geofile-dialog">Delete Geo File</button>
   </div>
 
@@ -33,7 +40,6 @@
   </article>
 
 <% } %>
-
 
 <!-- ── Rename Area Dialog ─────────────────────────────────────────────────── -->
 <dialog id="rename-area-dialog">
@@ -54,7 +60,6 @@
   </article>
 </dialog>
 
-
 <!-- ── Delete Area Dialog ─────────────────────────────────────────────────── -->
 <dialog id="delete-area-dialog">
   <article>
@@ -62,20 +67,11 @@
       <button aria-label="Close" rel="prev" data-close-dialog="delete-area-dialog"></button>
       <h3>Delete Area</h3>
     </header>
-    <p>
-      ⚠️ Deleting <strong><%= area.name %></strong> will also permanently delete
-      all stands within this area. This cannot be undone.
-    </p>
+    <p>⚠️ Deleting <strong><%= area.name %></strong> will also permanently delete all stands within this area. This cannot be undone.</p>
     <p>To confirm, type the area name below:</p>
     <form action="/manager/areas/<%= area.id %>/delete" method="POST">
       <label>
-        <input
-          type="text"
-          name="confirm"
-          placeholder="<%= area.name %>"
-          required
-          autocomplete="off"
-        />
+        <input type="text" name="confirm" placeholder="<%= area.name %>" required autocomplete="off" />
       </label>
       <footer>
         <button type="button" class="outline" data-close-dialog="delete-area-dialog">Cancel</button>
@@ -85,7 +81,6 @@
   </article>
 </dialog>
 
-
 <!-- ── Delete Geo File Dialog ─────────────────────────────────────────────── -->
 <dialog id="delete-geofile-dialog">
   <article>
@@ -93,10 +88,7 @@
       <button aria-label="Close" rel="prev" data-close-dialog="delete-geofile-dialog"></button>
       <h3>Delete Geo File</h3>
     </header>
-    <p>
-      Are you sure you want to remove the geo file from <strong><%= area.name %></strong>?
-      The map will no longer be displayed.
-    </p>
+    <p>Are you sure you want to remove the geo file from <strong><%= area.name %></strong>? The map will no longer be displayed.</p>
     <p>Or would you like to replace it with a new file instead?</p>
     <form action="/manager/areas/<%= area.id %>/geofile" method="POST" enctype="multipart/form-data" style="margin-bottom: 1rem;">
       <label>
@@ -117,88 +109,3 @@
     </form>
   </article>
 </dialog>
-
-
-<!-- ── Leaflet Map Script ──────────────────────────────────────────────────── -->
-<% if (area.geofile) { %>
-<script>
-  const mapEl = document.getElementById('area-map');
-  const geojsonData = JSON.parse(decodeURIComponent(mapEl.dataset.geojson));
-
-  const streets = L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
-    maxZoom: 17
-  });
-
-  const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
-    maxZoom: 19
-  });
-
-  const map = L.map('area-map', { layers: [streets] });
-
-  L.control.layers(
-    { 'Topo': streets, 'Satellite': satellite },
-    {},
-    { position: 'topright' }
-  ).addTo(map);
-
-  // Shade outside the area
-  const outerRing = [
-    [90, -180], [90, 180], [-90, 180], [-90, -180], [90, -180]
-  ];
-
-  const innerRing = geojsonData.features[0].geometry.coordinates[0].map(
-    ([lng, lat]) => [lat, lng]
-  );
-
-  L.polygon([outerRing, innerRing], {
-    color: 'transparent',
-    fillColor: '#000',
-    fillOpacity: 0.35
-  }).addTo(map);
-
-  // Add GeoJSON on top of shading
-  const layer = L.geoJSON(geojsonData, {
-    style: {
-      color: '#e00',
-      weight: 2,
-      fillOpacity: 0
-    },
-    pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
-      radius: 6,
-      color: '#e00',
-      fillColor: '#e00',
-      fillOpacity: 0.8
-    })
-  }).addTo(map);
-
-
-  const fullscreenBtn = L.control({ position: 'topleft' });
-  fullscreenBtn.onAdd = function () {
-    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-    div.style.cssText = 'width:26px;height:26px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;';
-    div.innerHTML = '⛶';
-    div.title = 'Toggle fullscreen';
-    L.DomEvent.on(div, 'click', function (e) {
-      L.DomEvent.stopPropagation(e);
-      const mapEl = document.getElementById('area-map');
-      if (!document.fullscreenElement) {
-        mapEl.requestFullscreen();
-        div.innerHTML = '✕';
-      } else {
-        document.exitFullscreen();
-        div.innerHTML = '⛶';
-      }
-    });
-    document.addEventListener('fullscreenchange', function () {
-      if (!document.fullscreenElement) div.innerHTML = '⛶';
-    });
-    return div;
-  };
-  fullscreenBtn.addTo(map);
-
-
-  map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-</script>
-<% } %>
