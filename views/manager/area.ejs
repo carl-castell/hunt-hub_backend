@@ -125,10 +125,10 @@
   const mapEl = document.getElementById('area-map');
   const geojsonData = JSON.parse(decodeURIComponent(mapEl.dataset.geojson));
 
-    const streets = L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
-      maxZoom: 17
-    });
+  const streets = L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom: 17
+  });
 
   const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
@@ -138,12 +138,12 @@
   const map = L.map('area-map', { layers: [streets] });
 
   L.control.layers(
-    { 'Streets': streets, 'Satellite': satellite },
+    { 'Topo': streets, 'Satellite': satellite },
     {},
     { position: 'topright' }
   ).addTo(map);
 
-  // Shade outside first, then draw area on top
+  // Shade outside the area
   const outerRing = [
     [90, -180], [90, 180], [-90, 180], [-90, -180], [90, -180]
   ];
@@ -173,7 +173,32 @@
     })
   }).addTo(map);
 
-  map.fitBounds(layer.getBounds(), { padding: [20, 20] });
 
+  const fullscreenBtn = L.control({ position: 'topleft' });
+  fullscreenBtn.onAdd = function () {
+    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+    div.style.cssText = 'width:26px;height:26px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;';
+    div.innerHTML = '⛶';
+    div.title = 'Toggle fullscreen';
+    L.DomEvent.on(div, 'click', function (e) {
+      L.DomEvent.stopPropagation(e);
+      const mapEl = document.getElementById('area-map');
+      if (!document.fullscreenElement) {
+        mapEl.requestFullscreen();
+        div.innerHTML = '✕';
+      } else {
+        document.exitFullscreen();
+        div.innerHTML = '⛶';
+      }
+    });
+    document.addEventListener('fullscreenchange', function () {
+      if (!document.fullscreenElement) div.innerHTML = '⛶';
+    });
+    return div;
+  };
+  fullscreenBtn.addTo(map);
+
+
+  map.fitBounds(layer.getBounds(), { padding: [20, 20] });
 </script>
 <% } %>

@@ -78,8 +78,26 @@ export async function getArea(req: Request, res: Response) {
       background-color: #fff !important;
       display: block !important;
     }
+    .leaflet-bar button {
+      all: revert;
+      width: 26px !important;
+      height: 26px !important;
+      font-size: 16px !important;
+      cursor: pointer !important;
+      background: #fff !important;
+      border: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .leaflet-bar button:hover {
+      background: #f4f4f4 !important;
+    }
   </style>
 ` : '',
+
 
       extraScripts: area.geofile ? '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>' : '',
     });
