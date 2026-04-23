@@ -1,0 +1,80 @@
+<%
+  function fmtDate(val) {
+    if (!val) return '—';
+    const d = new Date(val);
+    if (isNaN(d)) return val;
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const yyyy = d.getUTCFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+%>
+
+<a href="/manager/guests/<%= guest.id %>" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Back to Guest</a>
+
+<h2><%= guest.firstName %> <%= guest.lastName %></h2>
+<p><strong>Date of Birth:</strong> <%= fmtDate(guest.dateOfBirth) %></p>
+
+<h3>Hunting License</h3>
+
+<% if (!license) { %>
+  <p style="color: #999;">No license selected.</p>
+<% } else { %>
+  <%
+    const licenseExpired = new Date(license.expiryDate) < new Date();
+  %>
+
+  <article>
+    <header>
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <strong>Uploaded: <%= fmtDate(license.uploadDate) %></strong>
+        <% if (licenseExpired) { %>
+          <span style="color: red; font-weight: bold;">✗ Expired</span>
+        <% } else { %>
+          <span style="color: green; font-weight: bold;">✔ Valid</span>
+        <% } %>
+        <% if (license.checked) { %>
+          <span style="color: #0077cc;">✔ Checked (<%= fmtDate(license.checkedAt) %>)</span>
+        <% } else { %>
+          <span style="color: #999;">✗ Unchecked</span>
+        <% } %>
+      </div>
+    </header>
+
+    <p><strong>Expiry Date:</strong> <%= fmtDate(license.expiryDate) %></p>
+
+    <% license.attachments.forEach(attachment => { %>
+      <% if (attachment.contentType.startsWith('image/')) { %>
+        <img src="/manager/files/<%= attachment.key %>" style="max-width: 100%; margin-bottom: 1rem;" />
+      <% } else { %>
+        <p><a href="/manager/files/<%= attachment.key %>" target="_blank">View Document (<%= attachment.originalName %>)</a></p>
+      <% } %>
+    <% }) %>
+
+    <footer style="display: flex; gap: 1rem;">
+      <form action="/manager/guests/<%= guest.id %>/hunting-license/check" method="POST">
+        <input type="hidden" name="licenseId" value="<%= license.id %>" />
+        <button type="submit">✔ License is Valid</button>
+      </form>
+
+      <button class="secondary outline" data-dialog="delete-license-dialog">Delete License</button>
+    </footer>
+  </article>
+
+  <dialog id="delete-license-dialog">
+    <article>
+      <header>
+        <button aria-label="Close" rel="prev" data-close-dialog="delete-license-dialog"></button>
+        <h3>Delete Hunting License</h3>
+      </header>
+      <p>Are you sure you want to permanently delete this hunting license? This cannot be undone.</p>
+      <form action="/manager/guests/<%= guest.id %>/hunting-license/delete" method="POST">
+        <input type="hidden" name="licenseId" value="<%= license.id %>" />
+        <footer>
+          <button type="button" class="outline" data-close-dialog="delete-license-dialog">Cancel</button>
+          <button type="submit" class="contrast">Delete</button>
+        </footer>
+      </form>
+    </article>
+  </dialog>
+<% } %>

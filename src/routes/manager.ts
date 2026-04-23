@@ -1,13 +1,19 @@
 import express, { Router } from 'express';
 import { getDashboard } from '../controllers/manager/dashboard';
 import { getEstate, postRenameEstate } from '../controllers/manager/estate';
-import { getArea, postCreateArea, postRenameArea, postDeleteArea } from '../controllers/manager/areas';
+import { getArea, postCreateArea, postRenameArea, postDeleteArea, postUploadGeofile, postDeleteGeofile } from '../controllers/manager/areas';
 import { getGuests, getNewGuest, postCreateGuest, getGuest, postUpdateGuest, postDeleteGuest } from '../controllers/manager/guests';
 import { getEvents, getEvent, postCreateEvent, postUpdateEvent, postDeleteEvent } from '../controllers/manager/events';
-import { getPeople, postCreateUser } from '../controllers/manager/people';
-import { getUser, postUpdateUserRole, postDeleteUser, postDeactivateUser, postResendActivation, postReactivateUser } from '../controllers/manager/people';
+import {
+  getPeople, postCreateUser,
+  getUser, postUpdateUserRole, postDeleteUser, postDeactivateUser, postResendActivation, postReactivateUser,
+} from '../controllers/manager/people';
 import { getAccount, postChangePassword } from '../controllers/manager/account';
-import { postUploadGeofile, postDeleteGeofile } from '../controllers/manager/areas';
+import {
+  getHuntingLicense, postCreateHuntingLicense, postCheckHuntingLicense, postDeleteHuntingLicense,
+  getTrainingCertificate, postCreateTrainingCertificate, postCheckTrainingCertificate, postDeleteTrainingCertificate,
+} from '@/controllers/licenses';
+import { getFile } from '@/controllers/files';
 import multer from 'multer';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10_000_000 } });
@@ -26,6 +32,8 @@ managerRouter.post('/areas',                          postCreateArea);
 managerRouter.get('/areas/:id',                       getArea);
 managerRouter.post('/areas/:id/rename',               postRenameArea);
 managerRouter.post('/areas/:id/delete',               postDeleteArea);
+managerRouter.post('/areas/:id/geofile',              upload.single('geofile'), postUploadGeofile);
+managerRouter.post('/areas/:id/geofile/delete',       postDeleteGeofile);
 
 // Guests
 managerRouter.get('/guests',                          getGuests);
@@ -34,8 +42,23 @@ managerRouter.post('/guests',                         postCreateGuest);
 managerRouter.get('/guests/:id',                      getGuest);
 managerRouter.post('/guests/:id/update',              postUpdateGuest);
 managerRouter.post('/guests/:id/delete',              postDeleteGuest);
-managerRouter.post('/areas/:id/geofile',         upload.single('geofile'), postUploadGeofile);
-managerRouter.post('/areas/:id/geofile/delete',  postDeleteGeofile);
+
+// Hunting License
+managerRouter.get('/guests/:id/hunting-license',          getHuntingLicense);
+managerRouter.post('/guests/:id/hunting-license',         upload.array('files', 4), postCreateHuntingLicense);
+managerRouter.post('/guests/:id/hunting-license/check',   postCheckHuntingLicense);
+managerRouter.post('/guests/:id/hunting-license/delete',  postDeleteHuntingLicense);
+
+// Training Certificate
+managerRouter.get('/guests/:id/training-certificate',          getTrainingCertificate);
+managerRouter.post('/guests/:id/training-certificate',         upload.array('files', 2), postCreateTrainingCertificate);
+managerRouter.post('/guests/:id/training-certificate/check',   postCheckTrainingCertificate);
+managerRouter.post('/guests/:id/training-certificate/delete',  postDeleteTrainingCertificate);
+
+
+// Files
+managerRouter.get('/files/*', getFile);
+
 
 // Events
 managerRouter.get('/events',                          getEvents);

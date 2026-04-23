@@ -1,0 +1,393 @@
+import { Request, Response } from 'express';
+import { eq, desc, and } from 'drizzle-orm';
+import { db } from '../db';
+import { usersTable } from '../db/schema/users';
+import { contactsTable } from '../db/schema/contacts';
+import {
+  huntingLicensesTable, huntingLicenseAttachmentsTable,
+  trainingCertificatesTable, trainingCertificateAttachmentsTable,
+} from '../db/schema/licenses';
+import { uploadFile, deleteFile } from '@/services/storage';
+import { z } from 'zod';
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+const ALLOWED_PDF_TYPE = 'application/pdf';
+
+// ── Schemas ───────────────────────────────────────────────────────────────────
+
+const licenseSchema = z.object({ expiryDate: z.string().min(1) });
+const certSchema = z.object({ issueDate: z.string().min(1) });
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+async function getGuestRow(id: number, estateId: number) {
+  const [row] = await db
+    .select()
+    .from(contactsTable)
+    .innerJoin(usersTable, eq(contactsTable.userId, usersTable.id))
+    .where(eq(contactsTable.userId, id))
+    .limit(1);
+  if (!row || row.users.estateId !== estateId) return null;
+  return { ...row.users, ...row.contacts };
+}
+
+function validateFiles(files: Express.Multer.File[], maxImages: number): string | null {
+  if (!files || files.length === 0) return 'At least one file is required';
+  const isPdf = files.length === 1 && files[0].mimetype === ALLOWED_PDF_TYPE;
+  const areImages = files.every(f => ALLOWED_IMAGE_TYPES.includes(f.mimetype));
+  if (!isPdf && !areImages) return 'Upload either one PDF or images (JPEG, PNG, WEBP, HEIC)';
+  if (areImages && files.length > maxImages) return `Maximum ${maxImages} images allowed`;
+  return null;
+}
+
+async function deleteLicense(licenseId: number): Promise<void> {
+  const attachments = await db
+    .select()
+    .from(huntingLicenseAttachmentsTable)
+    .where(eq(huntingLicenseAttachmentsTable.licenseId, licenseId));
+  for (const attachment of attachments) await deleteFile(attachment.key);
+  await db.delete(huntingLicensesTable).where(eq(huntingLicensesTable.id, licenseId));
+}
+
+async function deleteCertificate(certId: number): Promise<void> {
+  const attachments = await db
+    .select()
+    .from(trainingCertificateAttachmentsTable)
+    .where(eq(trainingCertificateAttachmentsTable.certId, certId));
+  for (const attachment of attachments) await deleteFile(attachment.key);
+  await db.delete(trainingCertificatesTable).where(eq(trainingCertificatesTable.id, certId));
+}
+
+// ── Hunting License ───────────────────────────────────────────────────────────
+
+export async function getHuntingLicense(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const requestedId = req.query.licenseId ? Number(req.query.licenseId) : null;
+
+    let license =
+      requestedId
+        ? (await db
+            .select()
+            .from(huntingLicensesTable)
+            .where(and(
+              eq(huntingLicensesTable.id, requestedId),
+              eq(huntingLicensesTable.userId, id),
+              eq(huntingLicensesTable.estateId, user.estateId!),
+            ))
+            .limit(1))[0]
+        : undefined;
+
+    if (!license) {
+      license = (await db
+        .select()
+        .from(huntingLicensesTable)
+        .where(and(
+          eq(huntingLicensesTable.userId, id),
+          eq(huntingLicensesTable.estateId, user.estateId!),
+        ))
+        .orderBy(desc(huntingLicensesTable.uploadDate))
+        .limit(1))[0];
+    }
+
+    if (!license) return res.redirect(`/manager/guests/${id}`);
+
+    const attachments = await db
+      .select()
+      .from(huntingLicenseAttachmentsTable)
+      .where(eq(huntingLicenseAttachmentsTable.licenseId, license.id))
+      .orderBy(desc(huntingLicenseAttachmentsTable.uploadDate));
+
+    res.render('manager/hunting-license', {
+      title: 'Hunting License',
+      user,
+      guest,
+      license: { ...license, attachments },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function postCreateHuntingLicense(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const result = licenseSchema.safeParse(req.body);
+    if (!result.success) return res.status(400).send(result.error.issues[0].message);
+
+    const files = req.files as Express.Multer.File[];
+    const validationError = validateFiles(files, 4);
+    if (validationError) return res.status(400).send(validationError);
+
+    const [license] = await db
+      .insert(huntingLicensesTable)
+      .values({ userId: id, estateId: user.estateId!, expiryDate: result.data.expiryDate })
+      .returning();
+
+    for (const file of files) {
+      const key = `licenses/hunting/${license.id}/${file.originalname}`;
+      await uploadFile(key, file.buffer, file.mimetype);
+      await db.insert(huntingLicenseAttachmentsTable).values({
+        licenseId: license.id,
+        kind: file.mimetype === ALLOWED_PDF_TYPE ? 'document' : 'photo',
+        key,
+        contentType: file.mimetype,
+        originalName: file.originalname,
+        sizeBytes: file.size,
+      });
+    }
+
+    res.redirect(`/manager/guests/${id}/hunting-license?licenseId=${license.id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function postCheckHuntingLicense(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const licenseId = Number(req.body.licenseId);
+    if (!licenseId) return res.status(400).send('License ID is required');
+
+    const [license] = await db
+      .select()
+      .from(huntingLicensesTable)
+      .where(eq(huntingLicensesTable.id, licenseId))
+      .limit(1);
+
+    if (!license || license.userId !== id || license.estateId !== user.estateId!) {
+      return res.status(404).send('License not found');
+    }
+
+    await db
+      .update(huntingLicensesTable)
+      .set({ checked: true, checkedAt: new Date() })
+      .where(eq(huntingLicensesTable.id, licenseId));
+
+    const allLicenses = await db
+      .select()
+      .from(huntingLicensesTable)
+      .where(eq(huntingLicensesTable.userId, id));
+
+    for (const old of allLicenses) {
+      if (old.id === licenseId) continue;
+      await deleteLicense(old.id);
+    }
+
+    res.redirect(`/manager/guests/${id}/hunting-license?licenseId=${licenseId}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function postDeleteHuntingLicense(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const licenseId = Number(req.body.licenseId);
+    if (!licenseId) return res.status(400).send('License ID is required');
+
+    const [license] = await db
+      .select()
+      .from(huntingLicensesTable)
+      .where(eq(huntingLicensesTable.id, licenseId))
+      .limit(1);
+
+    if (!license || license.userId !== id || license.estateId !== user.estateId!) {
+      return res.status(404).send('License not found');
+    }
+
+    await deleteLicense(licenseId);
+
+    res.redirect(`/manager/guests/${id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+// ── Training Certificate ──────────────────────────────────────────────────────
+
+export async function getTrainingCertificate(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const requestedId = req.query.certId ? Number(req.query.certId) : null;
+
+    let certificate =
+      requestedId
+        ? (await db
+            .select()
+            .from(trainingCertificatesTable)
+            .where(and(
+              eq(trainingCertificatesTable.id, requestedId),
+              eq(trainingCertificatesTable.userId, id),
+              eq(trainingCertificatesTable.estateId, user.estateId!),
+            ))
+            .limit(1))[0]
+        : undefined;
+
+    if (!certificate) {
+      certificate = (await db
+        .select()
+        .from(trainingCertificatesTable)
+        .where(and(
+          eq(trainingCertificatesTable.userId, id),
+          eq(trainingCertificatesTable.estateId, user.estateId!),
+        ))
+        .orderBy(desc(trainingCertificatesTable.uploadDate))
+        .limit(1))[0];
+    }
+
+    if (!certificate) return res.redirect(`/manager/guests/${id}`);
+
+    const attachments = await db
+      .select()
+      .from(trainingCertificateAttachmentsTable)
+      .where(eq(trainingCertificateAttachmentsTable.certId, certificate.id))
+      .orderBy(desc(trainingCertificateAttachmentsTable.uploadDate));
+
+    res.render('manager/training-certificate', {
+      title: 'Training Certificate',
+      user,
+      guest,
+      certificate: { ...certificate, attachments },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function postCreateTrainingCertificate(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const result = certSchema.safeParse(req.body);
+    if (!result.success) return res.status(400).send(result.error.issues[0].message);
+
+    const files = req.files as Express.Multer.File[];
+    const validationError = validateFiles(files, 2);
+    if (validationError) return res.status(400).send(validationError);
+
+    const [certificate] = await db
+      .insert(trainingCertificatesTable)
+      .values({ userId: id, estateId: user.estateId!, issueDate: result.data.issueDate })
+      .returning();
+
+    for (const file of files) {
+      const key = `certificates/${certificate.id}/${file.originalname}`;
+      await uploadFile(key, file.buffer, file.mimetype);
+      await db.insert(trainingCertificateAttachmentsTable).values({
+        certId: certificate.id,
+        kind: file.mimetype === ALLOWED_PDF_TYPE ? 'document' : 'photo',
+        key,
+        contentType: file.mimetype,
+        originalName: file.originalname,
+        sizeBytes: file.size,
+      });
+    }
+
+    res.redirect(`/manager/guests/${id}/training-certificate?certId=${certificate.id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function postCheckTrainingCertificate(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const certId = Number(req.body.certId);
+    if (!certId) return res.status(400).send('Certificate ID is required');
+
+    const [certificate] = await db
+      .select()
+      .from(trainingCertificatesTable)
+      .where(eq(trainingCertificatesTable.id, certId))
+      .limit(1);
+
+    if (!certificate || certificate.userId !== id || certificate.estateId !== user.estateId!) {
+      return res.status(404).send('Certificate not found');
+    }
+
+    await db
+      .update(trainingCertificatesTable)
+      .set({ checked: true, checkedAt: new Date() })
+      .where(eq(trainingCertificatesTable.id, certId));
+
+    const allCertificates = await db
+      .select()
+      .from(trainingCertificatesTable)
+      .where(eq(trainingCertificatesTable.userId, id));
+
+    for (const old of allCertificates) {
+      if (old.id === certId) continue;
+      await deleteCertificate(old.id);
+    }
+
+    res.redirect(`/manager/guests/${id}/training-certificate?certId=${certId}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function postDeleteTrainingCertificate(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const certId = Number(req.body.certId);
+    if (!certId) return res.status(400).send('Certificate ID is required');
+
+    const [certificate] = await db
+      .select()
+      .from(trainingCertificatesTable)
+      .where(eq(trainingCertificatesTable.id, certId))
+      .limit(1);
+
+    if (!certificate || certificate.userId !== id || certificate.estateId !== user.estateId!) {
+      return res.status(404).send('Certificate not found');
+    }
+
+    await deleteCertificate(certId);
+
+    res.redirect(`/manager/guests/${id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}

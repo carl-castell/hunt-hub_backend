@@ -1,17 +1,20 @@
 import { Request, Response } from 'express';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable } from '../../db/schema/users';
 import { contactsTable } from '../../db/schema/contacts';
+import { huntingLicensesTable, trainingCertificatesTable } from '../../db/schema/licenses';
 import { z } from 'zod';
 
+const optionalString = z.string().transform(v => v === '' ? undefined : v).pipe(z.string().min(1).optional());
+
 const createGuestSchema = z.object({
-  firstName:   z.string().min(1),
-  lastName:    z.string().min(1),
-  email:       z.string().email(),
-  phone:       z.string().min(1).optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
-  dateOfBirth: z.string().min(1).optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
-  rating:      z.coerce.number().int().min(1).max(5).optional(),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  email: z.string().email(),
+  phone: optionalString,
+  dateOfBirth: optionalString,
+  rating: z.coerce.number().int().min(1).max(5).optional(),
 });
 
 const updateGuestSchema = createGuestSchema;
@@ -101,7 +104,25 @@ export async function getGuest(req: Request, res: Response) {
 
     const guest = { ...row.users, ...row.contacts };
 
-    res.render('manager/guest', { title: 'Guest', user, guest });
+    const licenses = await db
+      .select()
+      .from(huntingLicensesTable)
+      .where(eq(huntingLicensesTable.userId, id))
+      .orderBy(desc(huntingLicensesTable.uploadDate));
+
+    const certificates = await db
+      .select()
+      .from(trainingCertificatesTable)
+      .where(eq(trainingCertificatesTable.userId, id))
+      .orderBy(desc(trainingCertificatesTable.uploadDate));
+
+    res.render('manager/guest', {
+      title: 'Guest',
+      user,
+      guest,
+      licenses,
+      certificates,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -158,7 +179,6 @@ export async function postDeleteGuest(req: Request, res: Response) {
 
     if (!row || row.users.estateId !== user.estateId) return res.status(404).send('Guest not found');
 
-    // Cascades to contactsTable via FK
     await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
 
     res.redirect('/manager/guests');
