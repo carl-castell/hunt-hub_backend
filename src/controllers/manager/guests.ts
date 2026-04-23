@@ -91,13 +91,17 @@ export async function postCreateGuest(req: Request, res: Response) {
 export async function getGuest(req: Request, res: Response) {
   try {
     const user = req.session.user!;
-    const { id } = req.params;
+    const guestId = Number(req.params.id);
+
+    if (!Number.isFinite(guestId)) {
+      return res.status(400).send('Invalid guest id');
+    }
 
     const [row] = await db
       .select()
       .from(contactsTable)
       .innerJoin(usersTable, eq(contactsTable.userId, usersTable.id))
-      .where(eq(contactsTable.userId, Number(id)))
+      .where(eq(contactsTable.userId, guestId))
       .limit(1);
 
     if (!row || row.users.estateId !== user.estateId) return res.status(404).send('Guest not found');
@@ -107,13 +111,13 @@ export async function getGuest(req: Request, res: Response) {
     const licenses = await db
       .select()
       .from(huntingLicensesTable)
-      .where(eq(huntingLicensesTable.userId, id))
+      .where(eq(huntingLicensesTable.userId, guestId))
       .orderBy(desc(huntingLicensesTable.uploadDate));
 
     const certificates = await db
       .select()
       .from(trainingCertificatesTable)
-      .where(eq(trainingCertificatesTable.userId, id))
+      .where(eq(trainingCertificatesTable.userId, guestId))
       .orderBy(desc(trainingCertificatesTable.uploadDate));
 
     res.render('manager/guest', {
@@ -128,6 +132,7 @@ export async function getGuest(req: Request, res: Response) {
     res.status(500).send('Server error');
   }
 }
+
 
 export async function postUpdateGuest(req: Request, res: Response) {
   try {

@@ -17,8 +17,39 @@ const ALLOWED_PDF_TYPE = 'application/pdf';
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
-const licenseSchema = z.object({ expiryDate: z.string().min(1) });
-const certSchema = z.object({ issueDate: z.string().min(1) });
+const licenseSchema = z.object({
+  expiryDate: z
+    .string()
+    .min(1)
+    .refine((v) => {
+      // v is "YYYY-MM-DD" from <input type="date">
+      const d = new Date(`${v}T00:00:00Z`);
+      if (isNaN(d.getTime())) return false;
+
+      const today = new Date();
+      const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+
+      // expiry must be today or in the future
+      return d.getTime() >= todayUtc.getTime();
+    }, 'Expiry date cannot be in the past'),
+});
+
+const certSchema = z.object({
+  issueDate: z
+    .string()
+    .min(1)
+    .refine((v) => {
+      // v is "YYYY-MM-DD" from <input type="date">
+      const d = new Date(`${v}T00:00:00Z`);
+      if (isNaN(d.getTime())) return false;
+
+      const today = new Date();
+      const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+
+      return d.getTime() <= todayUtc.getTime();
+    }, 'Issue date cannot be in the future'),
+});
+
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -190,7 +221,7 @@ export async function postCheckHuntingLicense(req: Request, res: Response) {
       await deleteLicense(old.id);
     }
 
-    res.redirect(`/manager/guests/${id}/hunting-license?licenseId=${licenseId}`);
+    res.redirect(`/manager/guests/${id}`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -356,7 +387,7 @@ export async function postCheckTrainingCertificate(req: Request, res: Response) 
       await deleteCertificate(old.id);
     }
 
-    res.redirect(`/manager/guests/${id}/training-certificate?certId=${certId}`);
+    res.redirect(`/manager/guests/${id}`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
