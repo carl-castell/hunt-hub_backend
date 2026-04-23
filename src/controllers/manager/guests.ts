@@ -9,8 +9,8 @@ const createGuestSchema = z.object({
   firstName:   z.string().min(1),
   lastName:    z.string().min(1),
   email:       z.string().email(),
-  phone:       z.string().min(1),
-  dateOfBirth: z.string().min(1),
+  phone:       z.string().min(1).optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
+  dateOfBirth: z.string().min(1).optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
   rating:      z.coerce.number().int().min(1).max(5).optional(),
 });
 

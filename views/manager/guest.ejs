@@ -25,7 +25,9 @@
       <label>First Name<input type="text" name="firstName" value="<%= guest.firstName %>" required maxlength="255" /></label>
       <label>Last Name<input type="text" name="lastName" value="<%= guest.lastName %>" required maxlength="255" /></label>
       <label>Email<input type="email" name="email" value="<%= guest.email %>" required maxlength="255" /></label>
-      <label>Phone<input type="text" name="phone" value="<%= guest.phone %>" required maxlength="255" /></label>
+      <label>Phone<input type="text" name="phone" value="<%= guest.phone ?? '' %>" /></label>
+      <label>Date of Birth<input type="date" name="dateOfBirth" value="<%= guest.dateOfBirth ?? '' %>" required /></label>
+
       <footer>
         <button type="button" class="outline" data-close-dialog="edit-guest-dialog">Cancel</button>
         <button type="submit">Save</button>

@@ -8,13 +8,7 @@ import { areasTable } from '@/db/schema/areas';
 export async function getLayerConfig(_req: Request, res: Response) {
   res.json({
     layers: [
-      {
-        id: 'osm',
-        label: 'Street',
-        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19,
-      },
+
       {
         id: 'topo',
         label: 'Topographic',
