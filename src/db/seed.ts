@@ -44,15 +44,25 @@ async function main() {
   console.log('> PostGIS extension enabled');
 
   await db.execute(sql`
-    ALTER TABLE areas
-    ALTER COLUMN geofile
-    SET DATA TYPE geometry(GeometryCollection, 4326)
-    USING CASE
-      WHEN geofile IS NOT NULL THEN ST_GeomFromGeoJSON(geofile)
-      ELSE NULL
-    END
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'areas'
+          AND column_name = 'geofile'
+          AND data_type != 'USER-DEFINED'
+      ) THEN
+        ALTER TABLE areas
+        ALTER COLUMN geofile
+        SET DATA TYPE geometry(GeometryCollection, 4326)
+        USING CASE
+          WHEN geofile IS NOT NULL THEN ST_GeomFromGeoJSON(geofile)
+          ELSE NULL
+        END;
+      END IF;
+    END $$;
   `);
-  console.log('> areas.geofile migrated to geometry(GeometryCollection, 4326)');
+  console.log('> areas.geofile checked/migrated to geometry(GeometryCollection, 4326)');
 
   await db.execute(sql`
     CREATE INDEX IF NOT EXISTS areas_geofile_gist ON areas USING GIST (geofile)

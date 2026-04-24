@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { db } from '@/db';
-import { estatesTable, usersTable, accountsTable, userAuthTokensTable } from '@/db/schema';
+import { estatesTable, usersTable, accountsTable, userAuthTokensTable, contactsTable } from '@/db/schema';
 
 export async function seedMockData() {
   console.log('> Seeding mock data...');
@@ -49,5 +49,30 @@ export async function seedMockData() {
   });
 
   console.log(`  ✔ Activation token created: ${token}`);
+
+  // 5. Create 60 guests
+  const guestUsers = await db
+    .insert(usersTable)
+    .values(
+      Array.from({ length: 60 }, () => ({
+        firstName: faker.person.firstName(),
+        lastName:  faker.person.lastName(),
+        role:      'guest' as const,
+        estateId:  estate.id,
+      }))
+    )
+    .returning();
+
+  await db.insert(contactsTable).values(
+    guestUsers.map(g => ({
+      userId:      g.id,
+      email:       faker.internet.email({ firstName: g.firstName, lastName: g.lastName }),
+      phone:       faker.phone.number({ style: 'national' }),
+      dateOfBirth: faker.date.birthdate({ min: 18, max: 80, mode: 'age' }).toISOString().split('T')[0],
+      rating:      faker.number.int({ min: 1, max: 5 }),
+    }))
+  );
+
+  console.log('  ✔ 60 guests created');
   console.log('> Mock data seeding complete.');
 }

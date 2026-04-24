@@ -8,99 +8,135 @@
     const yyyy = d.getUTCFullYear();
     return `${dd}/${mm}/${yyyy}`;
   }
+
+  function timeUntilExpiry(dateStr) {
+    const target = new Date(dateStr);
+    const now = new Date();
+    const diffMs = target - now;
+    const totalDays = Math.floor(Math.abs(diffMs) / 86400000);
+
+    if (totalDays > 365) return diffMs > 0 ? 'more than a year' : 'more than a year ago';
+
+    if (diffMs <= 0) {
+      return `${totalDays} day${totalDays !== 1 ? 's' : ''} ago`;
+    }
+
+    const years  = Math.floor(totalDays / 365);
+    const months = Math.floor((totalDays % 365) / 30);
+    const days   = totalDays % 30;
+    const parts  = [];
+    if (years)  parts.push(`${years} yr`);
+    if (months) parts.push(`${months} mo`);
+    if (days || parts.length === 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+    return parts.join(', ');
+  }
+
+  function timeSinceIssue(dateStr) {
+    const target = new Date(dateStr);
+    const now = new Date();
+    const totalDays = Math.floor((now - target) / 86400000);
+    if (totalDays > 365) return 'more than a year';
+    return `${totalDays} day${totalDays !== 1 ? 's' : ''} ago`;
+  }
 %>
 
-<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-  <h2 style="margin: 0;"><%= guest.firstName %> <%= guest.lastName %></h2>
-  <button class="outline" data-dialog="edit-guest-dialog">Edit</button>
-  <button class="secondary outline" data-dialog="delete-guest-dialog">Delete</button>
-</div>
+<style>
+  .guest-header { display: flex; align-items: flex-start; justify-content: space-between; }
+  .guest-meta { margin-top: 0.75rem; display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; font-size: 0.9rem; }
+  .guest-meta-label { color: var(--pico-muted-color); }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .section-header h3 { margin: 0; }
+  .date-valid   { color: #16a34a; }
+  .date-expired { color: #dc2626; }
+</style>
 
-<a href="/manager/guests" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Back to Guests</a>
-
+<!-- Contact card -->
 <article>
-  <dl>
-    <dt>First Name</dt><dd><%= guest.firstName %></dd>
-    <dt>Last Name</dt><dd><%= guest.lastName %></dd>
-    <dt>Email</dt><dd><%= guest.email %></dd>
-    <dt>Phone</dt><dd><%= guest.phone ?? '—' %></dd>
-    <dt>Date of Birth</dt><dd><%= fmtDate(guest.dateOfBirth) %></dd>
-  </dl>
+  <div class="guest-header">
+    <div style="flex: 1;">
+      <h2 style="margin: 0;"><%= guest.firstName %> <%= guest.lastName %></h2>
+      <div class="guest-meta">
+        <span class="guest-meta-label">Email</span>       <span><%= guest.email %></span>
+        <span class="guest-meta-label">Phone</span>       <span><%= guest.phone || '—' %></span>
+        <span class="guest-meta-label">Date of Birth</span><span><%= fmtDate(guest.dateOfBirth) %></span>
+        <span class="guest-meta-label">Rating</span>      <span><%= guest.rating != null ? guest.rating + ' / 5' : '—' %></span>
+      </div>
+    </div>
+    <details class="dropdown" style="margin: 0;">
+      <summary role="button" class="outline" style="padding: 0.4rem 0.8rem;">⚙</summary>
+      <ul dir="rtl">
+        <li><a href="#" data-dialog="edit-guest-dialog">Edit</a></li>
+        <li><a href="#" style="color: var(--pico-del-color);" data-dialog="delete-guest-dialog">Delete</a></li>
+      </ul>
+    </details>
+  </div>
 </article>
 
-<h3>Licenses & Certificates</h3>
+<!-- Licenses & Certificates -->
+<article style="margin-top: 1.5rem;">
+  <div class="section-header">
+    <h3>Licenses & Certificates</h3>
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="outline" data-dialog="add-license-dialog">+ Hunting License</button>
+      <button class="outline" data-dialog="add-certificate-dialog">+ Certificate</button>
+    </div>
+  </div>
 
-<figure>
-  <table>
-    <tbody>
-      <!-- Hunting Licenses (ALL) -->
-      <% if (licenses && licenses.length > 0) { %>
-        <% licenses.forEach((license) => { %>
-          <%
-            const licenseExpired = new Date(license.expiryDate) < new Date();
-          %>
-          <tr
-            style="cursor: pointer;"
-            data-href="/manager/guests/<%= guest.id %>/hunting-license?licenseId=<%= license.id %>"
-          >
+  <figure style="margin: 0;">
+    <table>
+      <tbody>
+        <!-- Hunting Licenses -->
+        <% if (licenses && licenses.length > 0) { %>
+          <% licenses.forEach((license) => { %>
+            <% const expired = new Date(license.expiryDate) < new Date(); %>
+            <tr style="cursor: pointer;" data-href="/manager/guests/<%= guest.id %>/hunting-license?licenseId=<%= license.id %>">
+              <td style="color:var(--pico-muted-color);">Hunting License</td>
+              <td style="color:var(--pico-muted-color);">Expiry Date</td>
+              <td><span class="<%= expired ? 'date-expired' : 'date-valid' %>"><%= fmtDate(license.expiryDate) %></span></td>
+              <td style="color:var(--pico-muted-color);"><%= timeUntilExpiry(license.expiryDate) %></td>
+              <td style="text-align: right;">
+                <% if (license.checked) { %>
+                  <span style="color: #0077cc;">✔ Checked (<%= fmtDate(license.checkedAt) %>)</span>
+                <% } else { %>
+                  <span style="color: var(--pico-muted-color);">✗ Unchecked</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
             <td>Hunting License</td>
-            <td><strong>Expiry Date:</strong> <%= fmtDate(license.expiryDate) %></td>
-            <td>
-              <% if (license.checked) { %>
-                <span style="color: #0077cc;">✔ Checked (<%= fmtDate(license.checkedAt) %>)</span>
-              <% } else { %>
-                <span style="color: #999;">✗ Unchecked</span>
-              <% } %>
-            </td>
-            <td>
-              <% if (licenseExpired) { %>
-                <span style="color: red; font-weight: bold;">✗ Expired</span>
-              <% } else { %>
-                <span style="color: green; font-weight: bold;">✔ Valid</span>
-              <% } %>
-            </td>
+            <td colspan="4" style="color: var(--pico-muted-color);">No entry</td>
           </tr>
-        <% }) %>
-      <% } else { %>
-        <tr>
-          <td>Hunting License</td>
-          <td colspan="3" style="color: #999;">No entry</td>
-        </tr>
-      <% } %>
+        <% } %>
 
-      <!-- Training Certificates (ALL) -->
-      <% if (certificates && certificates.length > 0) { %>
-        <% certificates.forEach((certificate) => { %>
-          <tr
-            style="cursor: pointer;"
-            data-href="/manager/guests/<%= guest.id %>/training-certificate?certId=<%= certificate.id %>"
-          >
+        <!-- Training Certificates -->
+        <% if (certificates && certificates.length > 0) { %>
+          <% certificates.forEach((certificate) => { %>
+            <tr style="cursor: pointer;" data-href="/manager/guests/<%= guest.id %>/training-certificate?certId=<%= certificate.id %>">
+              <td style="color:var(--pico-muted-color);">Training Certificate</td>
+              <td style="color:var(--pico-muted-color);">Issue Date</td>
+              <td><%= fmtDate(certificate.issueDate) %></td>
+              <td style="color:var(--pico-muted-color);"><%= timeSinceIssue(certificate.issueDate) %></td>
+              <td style="text-align: right;">
+                <% if (certificate.checked) { %>
+                  <span style="color: #0077cc;">✔ Checked (<%= fmtDate(certificate.checkedAt) %>)</span>
+                <% } else { %>
+                  <span style="color: var(--pico-muted-color);">✗ Unchecked</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
             <td>Training Certificate</td>
-            <td><strong>Issue Date:</strong> <%= fmtDate(certificate.issueDate) %></td>
-            <td>
-              <% if (certificate.checked) { %>
-                <span style="color: #0077cc;">✔ Checked (<%= fmtDate(certificate.checkedAt) %>)</span>
-              <% } else { %>
-                <span style="color: #999;">✗ Unchecked</span>
-              <% } %>
-            </td>
-            <td></td>
+            <td colspan="4" style="color: var(--pico-muted-color);">No entry</td>
           </tr>
-        <% }) %>
-      <% } else { %>
-        <tr>
-          <td>Training Certificate</td>
-          <td colspan="3" style="color: #999;">No entry</td>
-        </tr>
-      <% } %>
-    </tbody>
-  </table>
-</figure>
-
-<div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
-  <button class="outline" data-dialog="add-license-dialog">Add Hunting License</button>
-  <button class="outline" data-dialog="add-certificate-dialog">Add Training Certificate</button>
-</div>
+        <% } %>
+      </tbody>
+    </table>
+  </figure>
+</article>
 
 <!-- Add Hunting License dialog -->
 <dialog id="add-license-dialog">

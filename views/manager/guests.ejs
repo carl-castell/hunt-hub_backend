@@ -10,6 +10,7 @@
       <h3>Add Guest</h3>
     </header>
     <form method="POST" action="/manager/guests">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>First Name<input type="text" name="firstName" required /></label>
       <label>Last Name<input type="text" name="lastName" required /></label>
       <label>Email<input type="email" name="email" required /></label>
