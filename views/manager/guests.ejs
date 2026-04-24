@@ -50,40 +50,43 @@
         <%= grandTotal %> total guest<%= grandTotal !== 1 ? 's' : '' %>
       <% } %>
     </p>
-    <form method="GET" action="/manager/guests" style="display:flex; gap:0.75rem; align-items:center; margin:0;">
-      <input type="text" name="search" placeholder="Search…" value="<%= search %>" style="margin:0; width:200px;" />
+    <div style="display:flex; gap:0.75rem; align-items:center;">
       <input type="hidden" name="sortBy" value="<%= sortBy %>" />
       <input type="hidden" name="sortDir" value="<%= sortDir %>" />
-      <button type="submit" class="outline" style="margin:0;">Search</button>
-      <% if (search || sortBy) { %>
-        <a href="/manager/guests" role="button" class="outline secondary" style="margin:0;">Clear</a>
-      <% } %>
-    </form>
+      <input type="text" name="search" placeholder="Search…" value="<%= search %>"
+        style="margin:0; width:200px;"
+        hx-get="/manager/guests"
+        hx-trigger="input changed delay:300ms"
+        hx-target="#guests-body"
+        hx-swap="innerHTML"
+        hx-include="[name='sortBy'],[name='sortDir']" />
+      <a href="/manager/guests" role="button" class="outline secondary" style="margin:0;">Clear</a>
+    </div>
   </div>
 
-  <% if (guests.length === 0) { %>
-    <p style="text-align:center; padding:2rem 0; color:var(--pico-muted-color); margin:0;">No guests found.</p>
-  <% } else { %>
-    <figure style="margin:0;">
-      <table>
-        <thead>
-          <tr>
-            <th class="<%= sortBy === 'firstName' ? 'active-sort' : '' %>">
-              <a href="<%= sortUrl('firstName') %>">First Name<%= sortArrow('firstName') %></a>
-            </th>
-            <th class="<%= sortBy === 'lastName' ? 'active-sort' : '' %>">
-              <a href="<%= sortUrl('lastName') %>">Last Name<%= sortArrow('lastName') %></a>
-            </th>
-            <th class="<%= sortBy === 'dateOfBirth' ? 'active-sort' : '' %>">
-              <a href="<%= sortUrl('dateOfBirth') %>">Date of Birth<%= sortArrow('dateOfBirth') %></a>
-            </th>
-            <th class="<%= sortBy === 'rating' ? 'active-sort' : '' %>">
-              <a href="<%= sortUrl('rating') %>">Rating<%= sortArrow('rating') %></a>
-            </th>
-            <th>Groups</th>
-          </tr>
-        </thead>
-        <tbody>
+  <figure style="margin:0;">
+    <table>
+      <thead>
+        <tr>
+          <th class="<%= sortBy === 'firstName' ? 'active-sort' : '' %>">
+            <a href="<%= sortUrl('firstName') %>">First Name<%= sortArrow('firstName') %></a>
+          </th>
+          <th class="<%= sortBy === 'lastName' ? 'active-sort' : '' %>">
+            <a href="<%= sortUrl('lastName') %>">Last Name<%= sortArrow('lastName') %></a>
+          </th>
+          <th class="<%= sortBy === 'dateOfBirth' ? 'active-sort' : '' %>">
+            <a href="<%= sortUrl('dateOfBirth') %>">Date of Birth<%= sortArrow('dateOfBirth') %></a>
+          </th>
+          <th class="<%= sortBy === 'rating' ? 'active-sort' : '' %>">
+            <a href="<%= sortUrl('rating') %>">Rating<%= sortArrow('rating') %></a>
+          </th>
+          <th>Groups</th>
+        </tr>
+      </thead>
+      <tbody id="guests-body">
+        <% if (guests.length === 0) { %>
+          <tr><td colspan="5" style="text-align:center; padding:2rem 0; color:var(--pico-muted-color);">No guests found.</td></tr>
+        <% } else { %>
           <% guests.forEach(guest => { %>
             <tr style="cursor:pointer;" data-href="/manager/guests/<%= guest.id %>">
               <td><%= guest.firstName %></td>
@@ -105,10 +108,10 @@
               </td>
             </tr>
           <% } %>
-        </tbody>
-      </table>
-    </figure>
-  <% } %>
+        <% } %>
+      </tbody>
+    </table>
+  </figure>
 </article>
 
 <!-- Add Guest dialog -->
