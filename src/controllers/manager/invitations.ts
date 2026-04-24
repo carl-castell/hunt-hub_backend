@@ -58,6 +58,9 @@ export async function getInvitation(req: Request, res: Response) {
   }
 }
 
+const VALID_STATUSES = ['staged', 'sent_email', 'sent_manually', 'waitlist', 'archived'] as const;
+const VALID_RESPONSES = ['open', 'yes', 'no'] as const;
+
 export async function getInvitationList(req: Request, res: Response) {
   try {
     const user = req.session.user!;
@@ -66,6 +69,10 @@ export async function getInvitationList(req: Request, res: Response) {
 
     const event = await findEvent(eventId, user.estateId!);
     if (!event) return res.status(404).send('Event not found');
+
+    const { status, response } = req.query as { status?: string; response?: string };
+    const statusFilter = status && (VALID_STATUSES as readonly string[]).includes(status) ? status : null;
+    const responseFilter = response && (VALID_RESPONSES as readonly string[]).includes(response) ? response : null;
 
     const invitations = await db
       .select({
@@ -78,14 +85,26 @@ export async function getInvitationList(req: Request, res: Response) {
       })
       .from(invitationsTable)
       .innerJoin(usersTable, eq(invitationsTable.userId, usersTable.id))
-      .where(eq(invitationsTable.eventId, eventId))
+      .where(and(
+        eq(invitationsTable.eventId, eventId),
+        statusFilter ? eq(invitationsTable.status, statusFilter as typeof VALID_STATUSES[number]) : undefined,
+        responseFilter ? eq(invitationsTable.response, responseFilter as typeof VALID_RESPONSES[number]) : undefined,
+      ))
       .orderBy(asc(usersTable.lastName), asc(usersTable.firstName));
+
+    const isPartial = req.headers['hx-request'] === 'true';
+    if (isPartial) {
+      res.locals.layout = false;
+      return res.render('manager/invitation-list-rows', { event, invitations });
+    }
 
     res.render('manager/invitation-list', {
       title: 'Guest List',
       user,
       event,
       invitations,
+      statusFilter,
+      responseFilter,
       breadcrumbs: [
         { label: 'Events', href: '/manager/events' },
         { label: event.eventName, href: `/manager/events/${eventId}` },

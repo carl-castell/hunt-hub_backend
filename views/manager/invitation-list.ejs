@@ -9,59 +9,83 @@
 </div>
 
 <article>
-  <% if (invitations.length === 0) { %>
-    <p style="text-align:center; padding:2rem 0; color:var(--pico-muted-color); margin:0;">No guests invited yet.</p>
-  <% } else { %>
-    <figure style="margin:0;">
-      <table>
-        <thead>
-          <tr>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>Status</th>
-            <th>Response</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% invitations.forEach(inv => { %>
-            <tr style="cursor:pointer;" data-href="/manager/events/<%= event.id %>/invitations/<%= inv.id %>">
-              <td><%= inv.firstName %></td>
-              <td><%= inv.lastName %></td>
-              <td style="color:var(--pico-muted-color);"><%= inv.status %></td>
-              <td style="color:var(--pico-muted-color);"><%= inv.response %></td>
-              <td style="text-align:right; white-space:nowrap;">
-                <details class="dropdown" style="margin:0; display:inline-block;">
-                  <summary role="button" class="outline secondary" style="padding:0.25rem 0.6rem;">⋯</summary>
-                  <ul dir="rtl">
-                    <li><a href="#" style="color:var(--pico-del-color);" data-dialog="remove-inv-dialog-<%= inv.id %>">Remove from guest list</a></li>
-                  </ul>
-                </details>
-              </td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </figure>
-  <% } %>
+  <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:1rem; flex-wrap:wrap;">
+    <button id="clear-filters" type="button" class="outline secondary" style="margin:0;">Clear</button>
+    <select name="status" style="margin:0; width:auto;"
+      hx-get="/manager/events/<%= event.id %>/invitations"
+      hx-trigger="change"
+      hx-target="#invitation-list-body"
+      hx-swap="innerHTML"
+      hx-include="[name='response']">
+      <option value="">All statuses</option>
+      <option value="staged"        <%= statusFilter === 'staged'         ? 'selected' : '' %>>Staged</option>
+      <option value="sent_email"    <%= statusFilter === 'sent_email'     ? 'selected' : '' %>>Sent (email)</option>
+      <option value="sent_manually" <%= statusFilter === 'sent_manually'  ? 'selected' : '' %>>Sent (manually)</option>
+      <option value="waitlist"      <%= statusFilter === 'waitlist'       ? 'selected' : '' %>>Waitlist</option>
+      <option value="archived"      <%= statusFilter === 'archived'       ? 'selected' : '' %>>Archived</option>
+    </select>
+    <select name="response" style="margin:0; width:auto;"
+      hx-get="/manager/events/<%= event.id %>/invitations"
+      hx-trigger="change"
+      hx-target="#invitation-list-body"
+      hx-swap="innerHTML"
+      hx-include="[name='status']">
+      <option value="">All responses</option>
+      <option value="open" <%= responseFilter === 'open' ? 'selected' : '' %>>Open</option>
+      <option value="yes"  <%= responseFilter === 'yes'  ? 'selected' : '' %>>Yes</option>
+      <option value="no"   <%= responseFilter === 'no'   ? 'selected' : '' %>>No</option>
+    </select>
+  </div>
+
+  <figure style="margin:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Status</th>
+          <th>Response</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="invitation-list-body">
+        <%- include('invitation-list-rows') %>
+      </tbody>
+    </table>
+  </figure>
 </article>
 
-<!-- Remove dialogs -->
-<% invitations.forEach(inv => { %>
-<dialog id="remove-inv-dialog-<%= inv.id %>">
+<!-- Generic remove dialog -->
+<dialog id="remove-inv-dialog">
   <article>
     <header>
-      <button aria-label="Close" rel="prev" data-close-dialog="remove-inv-dialog-<%= inv.id %>"></button>
+      <button aria-label="Close" rel="prev" data-close-dialog="remove-inv-dialog"></button>
       <h3>Remove Guest</h3>
     </header>
-    <p>Remove <strong><%= inv.firstName %> <%= inv.lastName %></strong> from the guest list?</p>
-    <form method="POST" action="/manager/events/<%= event.id %>/invitations/<%= inv.id %>/remove">
+    <p>Remove <strong id="remove-inv-name"></strong> from the guest list?</p>
+    <form id="remove-inv-form" method="POST" action="">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <footer>
-        <button type="button" class="outline" data-close-dialog="remove-inv-dialog-<%= inv.id %>">Cancel</button>
+        <button type="button" class="outline" data-close-dialog="remove-inv-dialog">Cancel</button>
         <button type="submit" class="contrast">Remove</button>
       </footer>
     </form>
   </article>
 </dialog>
-<% }) %>
+
+<script>
+  document.body.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-remove-action]');
+    if (!btn) return;
+    e.preventDefault();
+    document.getElementById('remove-inv-name').textContent = btn.getAttribute('data-remove-name');
+    document.getElementById('remove-inv-form').action = btn.getAttribute('data-remove-action');
+    document.getElementById('remove-inv-dialog').showModal();
+  });
+
+  document.getElementById('clear-filters').addEventListener('click', function () {
+    document.querySelector('select[name="status"]').value = '';
+    document.querySelector('select[name="response"]').value = '';
+    htmx.trigger(document.querySelector('select[name="status"]'), 'change');
+  });
+</script>
