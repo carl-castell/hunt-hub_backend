@@ -54,7 +54,7 @@ export async function seedMockData() {
   const guestUsers = await db
     .insert(usersTable)
     .values(
-      Array.from({ length: 60 }, () => ({
+      Array.from({ length: 400 }, () => ({
         firstName: faker.person.firstName(),
         lastName:  faker.person.lastName(),
         role:      'guest' as const,

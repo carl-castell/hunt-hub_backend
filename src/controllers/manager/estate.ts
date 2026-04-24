@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db';
 import { estatesTable } from '../../db/schema/estates';
 import { areasTable } from '../../db/schema/areas';
@@ -30,7 +30,7 @@ export async function getEstate(req: Request, res: Response) {
     const allPeople = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.estateId, user.estateId!));
+      .where(and(eq(usersTable.estateId, user.estateId!), inArray(usersTable.role, ['manager', 'staff'])));
 
     const people = allPeople.sort((a, b) => {
       const roleOrder: Record<string, number> = { manager: 0, staff: 1, admin: 2, guest: 3 };

@@ -1,8 +1,112 @@
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
-  <h2 style="margin: 0;">Guests</h2>
-  <button data-dialog="add-guest-dialog">Add Guest</button>
+<%
+  function fmtDate(val) {
+    if (!val) return '—';
+    const d = new Date(val);
+    if (isNaN(d)) return val;
+    return String(d.getUTCDate()).padStart(2,'0') + '/' +
+           String(d.getUTCMonth()+1).padStart(2,'0') + '/' +
+           d.getUTCFullYear();
+  }
+  function sortUrl(col) {
+    const q = new URLSearchParams();
+    if (search) q.set('search', search);
+    if (sortBy === col) {
+      if (sortDir === 'asc')  { q.set('sortBy', col); q.set('sortDir', 'desc'); }
+      // desc → clear sort (no sortBy)
+    } else {
+      q.set('sortBy', col); q.set('sortDir', 'asc');
+    }
+    return '/manager/guests?' + q.toString();
+  }
+  function sortArrow(col) {
+    if (sortBy !== col) return '';
+    return sortDir === 'asc' ? ' ↑' : ' ↓';
+  }
+%>
+
+<style>
+  .guests-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .guests-header h2 { margin: 0; }
+  .guest-count { font-size: 0.85rem; color: var(--pico-muted-color); margin: 0; }
+  th a { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
+  th a:hover { text-decoration: underline; }
+  th.active-sort a { color: var(--pico-primary); }
+</style>
+
+<div class="guests-header">
+  <h2>Guests</h2>
+  <button data-dialog="add-guest-dialog">+ Add Guest</button>
 </div>
 
+<article>
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+    <p class="guest-count">
+      <% if (search) { %>
+        <%= total %> result<%= total !== 1 ? 's' : '' %> of <%= grandTotal %> total guest<%= grandTotal !== 1 ? 's' : '' %>
+      <% } else { %>
+        <%= grandTotal %> total guest<%= grandTotal !== 1 ? 's' : '' %>
+      <% } %>
+    </p>
+    <form method="GET" action="/manager/guests" style="display:flex; gap:0.75rem; align-items:center; margin:0;">
+      <input type="text" name="search" placeholder="Search…" value="<%= search %>" style="margin:0; width:200px;" />
+      <input type="hidden" name="sortBy" value="<%= sortBy %>" />
+      <input type="hidden" name="sortDir" value="<%= sortDir %>" />
+      <button type="submit" class="outline" style="margin:0;">Search</button>
+      <% if (search || sortBy) { %>
+        <a href="/manager/guests" role="button" class="outline secondary" style="margin:0;">Clear</a>
+      <% } %>
+    </form>
+  </div>
+
+  <% if (guests.length === 0) { %>
+    <p style="text-align:center; padding:2rem 0; color:var(--pico-muted-color); margin:0;">No guests found.</p>
+  <% } else { %>
+    <figure style="margin:0;">
+      <table>
+        <thead>
+          <tr>
+            <th class="<%= sortBy === 'firstName' ? 'active-sort' : '' %>">
+              <a href="<%= sortUrl('firstName') %>">First Name<%= sortArrow('firstName') %></a>
+            </th>
+            <th class="<%= sortBy === 'lastName' ? 'active-sort' : '' %>">
+              <a href="<%= sortUrl('lastName') %>">Last Name<%= sortArrow('lastName') %></a>
+            </th>
+            <th class="<%= sortBy === 'dateOfBirth' ? 'active-sort' : '' %>">
+              <a href="<%= sortUrl('dateOfBirth') %>">Date of Birth<%= sortArrow('dateOfBirth') %></a>
+            </th>
+            <th class="<%= sortBy === 'rating' ? 'active-sort' : '' %>">
+              <a href="<%= sortUrl('rating') %>">Rating<%= sortArrow('rating') %></a>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <% guests.forEach(guest => { %>
+            <tr style="cursor:pointer;" data-href="/manager/guests/<%= guest.id %>">
+              <td><%= guest.firstName %></td>
+              <td><%= guest.lastName %></td>
+              <td style="color:var(--pico-muted-color);"><%= fmtDate(guest.dateOfBirth) %></td>
+              <td style="color:var(--pico-muted-color);"><%= guest.rating != null ? guest.rating + ' / 5' : '—' %></td>
+            </tr>
+          <% }) %>
+          <% if (hasMore) { %>
+            <tr id="load-more-row">
+              <td colspan="4" style="text-align:center; padding:1rem;">
+                <button class="outline"
+                  hx-get="/manager/guests?offset=<%= nextOffset %>&sortBy=<%= sortBy %>&sortDir=<%= sortDir %>&search=<%= encodeURIComponent(search) %>"
+                  hx-target="#load-more-row"
+                  hx-swap="outerHTML">
+                  Load more
+                </button>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </figure>
+  <% } %>
+</article>
+
+<!-- Add Guest dialog -->
 <dialog id="add-guest-dialog">
   <article>
     <header>
@@ -23,37 +127,3 @@
     </form>
   </article>
 </dialog>
-
-<!-- Filters -->
-<form method="GET" action="/manager/guests" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
-  <input type="text" name="search" placeholder="Search guests..." value="<%= search %>" style="flex: 1; min-width: 200px;" />
-  <select name="sortBy">
-    <option value="" <%= sortBy === '' ? 'selected' : '' %>>Sort by...</option>
-    <option value="firstName" <%= sortBy === 'firstName' ? 'selected' : '' %>>First Name</option>
-    <option value="lastName" <%= sortBy === 'lastName' ? 'selected' : '' %>>Last Name</option>
-  </select>
-  <button type="submit">Apply</button>
-  <a href="/manager/guests" role="button" class="outline">Clear</a>
-</form>
-
-<% if (guests.length === 0) { %>
-  <p>No guests found.</p>
-<% } else { %>
-  <figure>
-    <table>
-      <thead>
-        <tr><th>First Name</th><th>Last Name</th><th>Email</th><th>Phone</th></tr>
-      </thead>
-      <tbody>
-        <% guests.forEach(guest => { %>
-          <tr style="cursor: pointer;" data-href="/manager/guests/<%= guest.id %>">
-            <td><%= guest.firstName %></td>
-            <td><%= guest.lastName %></td>
-            <td><%= guest.email %></td>
-            <td><%= guest.phone %></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </figure>
-<% } %>

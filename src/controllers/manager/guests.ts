@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { eq, desc } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable } from '../../db/schema/users';
 import { contactsTable } from '../../db/schema/contacts';
@@ -19,34 +19,59 @@ const createGuestSchema = z.object({
 
 const updateGuestSchema = createGuestSchema;
 
+const GUESTS_LIMIT = 50;
+
+const sortColumns = {
+  firstName:   () => usersTable.firstName,
+  lastName:    () => usersTable.lastName,
+  dateOfBirth: () => contactsTable.dateOfBirth,
+  rating:      () => contactsTable.rating,
+} as const;
+
 export async function getGuests(req: Request, res: Response) {
   try {
     const user = req.session.user!;
-    const { search, sortBy } = req.query as { search?: string; sortBy?: string };
+    const { search, sortBy, sortDir, offset: offsetParam } = req.query as {
+      search?: string; sortBy?: string; sortDir?: string; offset?: string;
+    };
 
-    let rows = await db
+    const offset   = Math.max(0, Number(offsetParam) || 0);
+    const term     = search?.trim() ?? '';
+    const isPartial = req.headers['hx-request'] === 'true';
+
+    const col      = sortBy && sortBy in sortColumns
+      ? sortColumns[sortBy as keyof typeof sortColumns]()
+      : null;
+    const orderExpr = col ? (sortDir === 'desc' ? desc(col) : asc(col)) : asc(usersTable.lastName);
+
+    const estateWhere = eq(usersTable.estateId, user.estateId!);
+    const whereClause = term
+      ? and(estateWhere, or(ilike(usersTable.firstName, `%${term}%`), ilike(usersTable.lastName, `%${term}%`)))
+      : estateWhere;
+
+    const [[{ total }], [{ grandTotal }]] = await Promise.all([
+      db.select({ total: count() }).from(contactsTable).innerJoin(usersTable, eq(contactsTable.userId, usersTable.id)).where(whereClause),
+      db.select({ grandTotal: count() }).from(contactsTable).innerJoin(usersTable, eq(contactsTable.userId, usersTable.id)).where(estateWhere),
+    ]);
+
+    const rows = await db
       .select()
       .from(contactsTable)
       .innerJoin(usersTable, eq(contactsTable.userId, usersTable.id))
-      .where(eq(usersTable.estateId, user.estateId!));
+      .where(whereClause)
+      .orderBy(orderExpr)
+      .limit(GUESTS_LIMIT + 1)
+      .offset(offset);
 
-    let guests = rows.map(r => ({ ...r.users, ...r.contacts }));
+    const hasMore  = rows.length > GUESTS_LIMIT;
+    const guests   = rows.slice(0, GUESTS_LIMIT).map(r => ({ ...r.users, ...r.contacts }));
+    const viewData = { user, guests, total, grandTotal, search: term, sortBy: sortBy ?? '', sortDir: sortDir ?? '', hasMore, nextOffset: offset + GUESTS_LIMIT };
 
-    if (search && search.trim() !== '') {
-      const term = search.trim().toLowerCase();
-      guests = guests.filter(g => {
-        const full = `${g.firstName} ${g.lastName}`.toLowerCase();
-        return full.includes(term) || levenshteinDistance(full, term) <= 3;
-      });
+    if (isPartial) {
+      res.locals.layout = false;
+      return res.render('manager/guests-rows', viewData);
     }
-
-    if (sortBy === 'firstName') {
-      guests.sort((a, b) => a.firstName.localeCompare(b.firstName));
-    } else if (sortBy === 'lastName') {
-      guests.sort((a, b) => a.lastName.localeCompare(b.lastName));
-    }
-
-    res.render('manager/guests', { title: 'Guests', user, guests, search: search ?? '', sortBy: sortBy ?? '' });
+    res.render('manager/guests', { title: 'Guests', ...viewData });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -191,24 +216,4 @@ export async function postDeleteGuest(req: Request, res: Response) {
     console.error(err);
     res.status(500).send('Server error');
   }
-}
-
-function levenshteinDistance(a: string, b: string): number {
-  const matrix: number[][] = [];
-  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b[i - 1] === a[j - 1]) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-  return matrix[b.length][a.length];
 }

@@ -1,0 +1,30 @@
+<%
+  function fmtDate(val) {
+    if (!val) return '—';
+    const d = new Date(val);
+    if (isNaN(d)) return val;
+    return String(d.getUTCDate()).padStart(2,'0') + '/' +
+           String(d.getUTCMonth()+1).padStart(2,'0') + '/' +
+           d.getUTCFullYear();
+  }
+%>
+<% guests.forEach(guest => { %>
+  <tr style="cursor:pointer;" data-href="/manager/guests/<%= guest.id %>">
+    <td><%= guest.firstName %></td>
+    <td><%= guest.lastName %></td>
+    <td style="color:var(--pico-muted-color);"><%= fmtDate(guest.dateOfBirth) %></td>
+    <td style="color:var(--pico-muted-color);"><%= guest.rating != null ? guest.rating + ' / 5' : '—' %></td>
+  </tr>
+<% }) %>
+<% if (hasMore) { %>
+  <tr id="load-more-row">
+    <td colspan="4" style="text-align:center; padding:1rem;">
+      <button class="outline"
+        hx-get="/manager/guests?offset=<%= nextOffset %>&sortBy=<%= sortBy %>&sortDir=<%= sortDir %>&search=<%= encodeURIComponent(search) %>"
+        hx-target="#load-more-row"
+        hx-swap="outerHTML">
+        Load more
+      </button>
+    </td>
+  </tr>
+<% } %>
