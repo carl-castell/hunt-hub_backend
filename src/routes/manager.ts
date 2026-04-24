@@ -10,8 +10,8 @@ import {
 } from '../controllers/manager/people';
 import { getAccount, postChangePassword } from '../controllers/manager/account';
 import {
-  getHuntingLicense, postCreateHuntingLicense, postCheckHuntingLicense, postDeleteHuntingLicense,
-  getTrainingCertificate, postCreateTrainingCertificate, postCheckTrainingCertificate, postDeleteTrainingCertificate,
+  getHuntingLicense, postCreateHuntingLicense, postCheckHuntingLicense, postDeleteHuntingLicense, postUpdateHuntingLicense,
+  getTrainingCertificate, postCreateTrainingCertificate, postCheckTrainingCertificate, postDeleteTrainingCertificate, postUpdateTrainingCertificate,
 } from '@/controllers/licenses';
 import { getFile } from '@/controllers/files';
 import multer from 'multer';
@@ -48,12 +48,14 @@ managerRouter.get('/guests/:id/hunting-license',          getHuntingLicense);
 managerRouter.post('/guests/:id/hunting-license',         upload.array('files', 4), postCreateHuntingLicense);
 managerRouter.post('/guests/:id/hunting-license/check',   postCheckHuntingLicense);
 managerRouter.post('/guests/:id/hunting-license/delete',  postDeleteHuntingLicense);
+managerRouter.post('/guests/:id/hunting-license/update',  postUpdateHuntingLicense);
 
 // Training Certificate
 managerRouter.get('/guests/:id/training-certificate',          getTrainingCertificate);
 managerRouter.post('/guests/:id/training-certificate',         upload.array('files', 2), postCreateTrainingCertificate);
 managerRouter.post('/guests/:id/training-certificate/check',   postCheckTrainingCertificate);
 managerRouter.post('/guests/:id/training-certificate/delete',  postDeleteTrainingCertificate);
+managerRouter.post('/guests/:id/training-certificate/update',  postUpdateTrainingCertificate);
 
 
 // Files

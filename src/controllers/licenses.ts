@@ -257,6 +257,41 @@ export async function postDeleteHuntingLicense(req: Request, res: Response) {
   }
 }
 
+export async function postUpdateHuntingLicense(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const licenseId = Number(req.body.licenseId);
+    if (!licenseId) return res.status(400).send('License ID is required');
+
+    const [license] = await db
+      .select()
+      .from(huntingLicensesTable)
+      .where(eq(huntingLicensesTable.id, licenseId))
+      .limit(1);
+
+    if (!license || license.userId !== id || license.estateId !== user.estateId!) {
+      return res.status(404).send('License not found');
+    }
+
+    const result = licenseSchema.safeParse(req.body);
+    if (!result.success) return res.status(400).send(result.error.issues[0].message);
+
+    await db
+      .update(huntingLicensesTable)
+      .set({ expiryDate: result.data.expiryDate })
+      .where(eq(huntingLicensesTable.id, licenseId));
+
+    res.redirect(`/manager/guests/${id}/hunting-license?licenseId=${licenseId}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
 // ── Training Certificate ──────────────────────────────────────────────────────
 
 export async function getTrainingCertificate(req: Request, res: Response) {
@@ -417,6 +452,41 @@ export async function postDeleteTrainingCertificate(req: Request, res: Response)
     await deleteCertificate(certId);
 
     res.redirect(`/manager/guests/${id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function postUpdateTrainingCertificate(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const id = Number(req.params.id);
+    const guest = await getGuestRow(id, user.estateId!);
+    if (!guest) return res.status(404).send('Guest not found');
+
+    const certId = Number(req.body.certId);
+    if (!certId) return res.status(400).send('Certificate ID is required');
+
+    const [certificate] = await db
+      .select()
+      .from(trainingCertificatesTable)
+      .where(eq(trainingCertificatesTable.id, certId))
+      .limit(1);
+
+    if (!certificate || certificate.userId !== id || certificate.estateId !== user.estateId!) {
+      return res.status(404).send('Certificate not found');
+    }
+
+    const result = certSchema.safeParse(req.body);
+    if (!result.success) return res.status(400).send(result.error.issues[0].message);
+
+    await db
+      .update(trainingCertificatesTable)
+      .set({ issueDate: result.data.issueDate })
+      .where(eq(trainingCertificatesTable.id, certId));
+
+    res.redirect(`/manager/guests/${id}/training-certificate?certId=${certId}`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

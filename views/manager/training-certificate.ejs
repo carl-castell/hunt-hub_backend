@@ -48,9 +48,30 @@
         <button type="submit">✔ Certificate is Valid</button>
       </form>
 
+      <button class="outline" data-dialog="edit-certificate-dialog">Edit Issue Date</button>
       <button class="secondary outline" data-dialog="delete-certificate-dialog">Delete Certificate</button>
     </footer>
   </article>
+
+  <dialog id="edit-certificate-dialog">
+    <article>
+      <header>
+        <button aria-label="Close" rel="prev" data-close-dialog="edit-certificate-dialog"></button>
+        <h3>Edit Issue Date</h3>
+      </header>
+      <form action="/manager/guests/<%= guest.id %>/training-certificate/update" method="POST">
+        <input type="hidden" name="certId" value="<%= certificate.id %>" />
+        <label>
+          Issue Date
+          <input type="date" name="issueDate" value="<%= certificate.issueDate %>" required />
+        </label>
+        <footer>
+          <button type="button" class="outline" data-close-dialog="edit-certificate-dialog">Cancel</button>
+          <button type="submit">Save</button>
+        </footer>
+      </form>
+    </article>
+  </dialog>
 
   <dialog id="delete-certificate-dialog">
     <article>
