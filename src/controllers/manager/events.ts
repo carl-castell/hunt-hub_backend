@@ -29,7 +29,7 @@ export async function getEvents(req: Request, res: Response) {
       .filter(e => new Date(e.date) < now)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    res.render('manager/events', { title: 'Events', user, upcomingEvents, pastEvents });
+    res.render('manager/events', { title: 'Events', user, upcomingEvents, pastEvents, breadcrumbs: [{ label: 'Events' }] });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -54,7 +54,7 @@ export async function getEvent(req: Request, res: Response) {
       .from(drivesTable)
       .where(eq(drivesTable.eventId, Number(id)));
 
-    res.render('manager/event', { title: event.eventName, user, event, drives });
+    res.render('manager/event', { title: event.eventName, user, event, drives, breadcrumbs: [{ label: 'Events', href: '/manager/events' }, { label: event.eventName }] });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

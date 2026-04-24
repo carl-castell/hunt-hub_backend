@@ -18,7 +18,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ── Table row navigation ───────────────────────────────────────────────────
   document.querySelectorAll('tr[data-href]').forEach(function (row) {
-    row.addEventListener('click', function () {
+    row.addEventListener('click', function (e) {
+      if (e.target.closest('a, button, summary, input, select, textarea, label, form')) return;
       window.location = row.getAttribute('data-href');
     });
   });

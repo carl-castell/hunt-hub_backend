@@ -42,11 +42,10 @@ export const invitationsTable = pgTable(
       .references(() => usersTable.id, { onDelete: "cascade" }),
 
     tokenId: integer("token_id")
-      .notNull()
       .references(() => userAuthTokensTable.id, { onDelete: "cascade" }),
 
     response: invitationResponseEnum().notNull().default("open"),
-    respondBy: timestamp("respond_by").notNull(),
+    respondBy: timestamp("respond_by"),
     respondedAt: timestamp("responded_at"),
     openedAt: timestamp("opened_at"),
 

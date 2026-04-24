@@ -1,0 +1,63 @@
+<%
+  function fmtDateTime(val) {
+    if (!val) return '—';
+    const d = new Date(val);
+    if (isNaN(d)) return val;
+    return String(d.getUTCDate()).padStart(2,'0') + '/' +
+           String(d.getUTCMonth()+1).padStart(2,'0') + '/' +
+           d.getUTCFullYear() + ' ' +
+           String(d.getUTCHours()).padStart(2,'0') + ':' +
+           String(d.getUTCMinutes()).padStart(2,'0');
+  }
+%>
+<style>
+  .inv-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+  .inv-header h2 { margin: 0; }
+</style>
+
+<div class="inv-header">
+  <h2><%= invitation.firstName %> <%= invitation.lastName %></h2>
+  <details class="dropdown" style="margin:0;">
+    <summary role="button" class="outline" style="padding:0.4rem 0.8rem;">⋯</summary>
+    <ul dir="rtl">
+      <li><a href="#" style="color:var(--pico-del-color);" data-dialog="remove-inv-dialog">Remove from guest list</a></li>
+    </ul>
+  </details>
+</div>
+
+<article>
+  <dl>
+    <dt>Status</dt>
+    <dd><%= invitation.status %></dd>
+
+    <dt>Response</dt>
+    <dd><%= invitation.response %></dd>
+
+    <dt>Respond By</dt>
+    <dd><%= fmtDateTime(invitation.respondBy) %></dd>
+
+    <dt>Responded At</dt>
+    <dd><%= fmtDateTime(invitation.respondedAt) %></dd>
+
+    <dt>Opened At</dt>
+    <dd><%= fmtDateTime(invitation.openedAt) %></dd>
+  </dl>
+</article>
+
+<!-- Remove dialog -->
+<dialog id="remove-inv-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="remove-inv-dialog"></button>
+      <h3>Remove Guest</h3>
+    </header>
+    <p>Remove <strong><%= invitation.firstName %> <%= invitation.lastName %></strong> from the guest list?</p>
+    <form method="POST" action="/manager/events/<%= event.id %>/invitations/<%= invitation.id %>/remove">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <footer>
+        <button type="button" class="outline" data-close-dialog="remove-inv-dialog">Cancel</button>
+        <button type="submit" class="contrast">Remove</button>
+      </footer>
+    </form>
+  </article>
+</dialog>

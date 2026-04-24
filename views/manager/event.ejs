@@ -15,13 +15,16 @@
       &nbsp;·&nbsp;<%= event.time %>
     </p>
   </div>
-  <details class="dropdown" style="margin: 0;">
-    <summary role="button" class="outline" style="padding: 0.4rem 0.8rem;">⚙</summary>
-    <ul dir="rtl">
-      <li><a href="#" data-dialog="edit-event-dialog">Edit</a></li>
-      <li><a href="#" style="color: var(--pico-del-color);" data-dialog="delete-event-dialog">Delete</a></li>
-    </ul>
-  </details>
+  <div style="display:flex; gap:0.5rem; align-items:center;">
+    <a href="/manager/events/<%= event.id %>/invitations" role="button" class="outline">Guest List</a>
+    <details class="dropdown" style="margin: 0;">
+      <summary role="button" class="outline" style="padding: 0.4rem 0.8rem;">⚙</summary>
+      <ul dir="rtl">
+        <li><a href="#" data-dialog="edit-event-dialog">Edit</a></li>
+        <li><a href="#" style="color: var(--pico-del-color);" data-dialog="delete-event-dialog">Delete</a></li>
+      </ul>
+    </details>
+  </div>
 </div>
 
 <!-- Drives -->

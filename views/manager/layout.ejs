@@ -76,6 +76,19 @@
       </details>
     </nav>
 
+    <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs.length > 0) { %>
+    <nav aria-label="breadcrumb" style="padding:0.35rem 2rem; border-bottom:1px solid var(--pico-muted-border-color); font-size:0.85rem; color:var(--pico-muted-color);">
+      <% breadcrumbs.forEach((crumb, i) => { %>
+        <% if (i > 0) { %><span style="margin:0 0.4rem;">/</span><% } %>
+        <% if (crumb.href) { %>
+          <a href="<%= crumb.href %>" style="text-decoration:none; color:inherit;"><%= crumb.label %></a>
+        <% } else { %>
+          <span><%= crumb.label %></span>
+        <% } %>
+      <% }) %>
+    </nav>
+    <% } %>
+
     <main class="manager-content"><%- body %></main>
 
     <script src="/js/dialogs.js"></script>

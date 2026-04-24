@@ -102,7 +102,7 @@ export async function getGuests(req: Request, res: Response) {
       res.locals.layout = false;
       return res.render('manager/guests-rows', viewData);
     }
-    res.render('manager/guests', { title: 'Guests', ...viewData });
+    res.render('manager/guests', { title: 'Guests', ...viewData, breadcrumbs: [{ label: 'Guests' }] });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -110,7 +110,7 @@ export async function getGuests(req: Request, res: Response) {
 }
 
 export async function getNewGuest(req: Request, res: Response) {
-  res.render('manager/guest-new', { title: 'Add Guest', user: req.session.user!, error: null });
+  res.render('manager/guest-new', { title: 'Add Guest', breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: 'New Guest' }], user: req.session.user!, error: null });
 }
 
 export async function postCreateGuest(req: Request, res: Response) {
@@ -189,6 +189,7 @@ export async function getGuest(req: Request, res: Response) {
       certificates,
       guestGroups: guestGroupRows,
       availableGroups,
+      breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: `${guest.firstName} ${guest.lastName}` }],
     });
   } catch (err) {
     console.error(err);

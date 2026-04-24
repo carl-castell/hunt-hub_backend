@@ -90,6 +90,7 @@ export async function getUser(req: Request, res: Response) {
 
     const domain = process.env.DOMAIN || 'http://localhost:3000';
 
+    const breadcrumbs = [{ label: 'Estate', href: '/manager/estate' }, { label: `${targetUser.firstName} ${targetUser.lastName}` }];
     res.render('manager/user', {
       title: 'People',
       user,
@@ -97,6 +98,7 @@ export async function getUser(req: Request, res: Response) {
       activationToken: targetUser.id === user.id ? null : (authToken?.token || null),
       domain,
       error: null,
+      breadcrumbs,
     });
   } catch (err) {
     console.error(err);
@@ -152,6 +154,7 @@ export async function postUpdateUserRole(req: Request, res: Response) {
           activationToken: targetUser.id === user.id ? null : (authToken?.token || null),
           domain,
           error: 'At least one manager must exist per estate. Assign another manager before changing this role.',
+          breadcrumbs: [{ label: 'Estate', href: '/manager/estate' }, { label: `${targetUser.firstName} ${targetUser.lastName}` }],
         });
       }
     }

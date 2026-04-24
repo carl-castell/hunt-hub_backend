@@ -74,7 +74,11 @@ export async function getArea(req: Request, res: Response) {
 
     if (!area || area.estateId !== user.estateId) return res.status(404).send('Area not found');
 
-    res.render('manager/area', { title: 'Areas', user, area });
+    const breadcrumbs = [
+      { label: 'Estate', href: '/manager/estate' },
+      { label: area.name },
+    ];
+    res.render('manager/area', { title: area.name, user, area, breadcrumbs });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

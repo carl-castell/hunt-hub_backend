@@ -140,6 +140,7 @@ export async function getHuntingLicense(req: Request, res: Response) {
       user,
       guest,
       license: { ...license, attachments },
+      breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: `${guest.firstName} ${guest.lastName}`, href: `/manager/guests/${guest.id}` }, { label: 'Hunting License' }],
     });
   } catch (err) {
     console.error(err);
@@ -341,6 +342,7 @@ export async function getTrainingCertificate(req: Request, res: Response) {
       user,
       guest,
       certificate: { ...certificate, attachments },
+      breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: `${guest.firstName} ${guest.lastName}`, href: `/manager/guests/${guest.id}` }, { label: 'Training Certificate' }],
     });
   } catch (err) {
     console.error(err);

@@ -45,6 +45,7 @@ export async function getEstate(req: Request, res: Response) {
       estate,
       areas,
       people,
+      breadcrumbs: [{ label: 'Estate' }],
     });
   } catch (err) {
     console.error(err);

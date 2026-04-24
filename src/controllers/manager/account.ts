@@ -27,7 +27,7 @@ export async function getAccount(req: Request, res: Response) {
 
     if (!fullUser) return res.status(404).send('User not found');
 
-    res.render('manager/account', { title: 'Account', user, fullUser, error: null, success: null });
+    res.render('manager/account', { title: 'Account', breadcrumbs: [{ label: 'Account' }], user, fullUser, error: null, success: null });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -47,7 +47,7 @@ export async function postChangePassword(req: Request, res: Response) {
         .limit(1);
 
       return res.render('manager/account', {
-        title: 'Account',
+        title: 'Account', breadcrumbs: [{ label: 'Account' }],
         user,
         fullUser,
         error: result.error.issues[0].message,
@@ -73,7 +73,7 @@ export async function postChangePassword(req: Request, res: Response) {
         .limit(1);
 
       return res.render('manager/account', {
-        title: 'Account',
+        title: 'Account', breadcrumbs: [{ label: 'Account' }],
         user,
         fullUser,
         error: 'No password set. Please use your activation link.',
@@ -90,7 +90,7 @@ export async function postChangePassword(req: Request, res: Response) {
         .limit(1);
 
       return res.render('manager/account', {
-        title: 'Account',
+        title: 'Account', breadcrumbs: [{ label: 'Account' }],
         user,
         fullUser,
         error: 'Current password is incorrect.',
@@ -111,7 +111,7 @@ export async function postChangePassword(req: Request, res: Response) {
       .limit(1);
 
     res.render('manager/account', {
-      title: 'Account',
+      title: 'Account', breadcrumbs: [{ label: 'Account' }],
       user,
       fullUser,
       error: null,
