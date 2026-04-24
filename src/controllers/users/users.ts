@@ -34,7 +34,7 @@ export async function getUser(req: Request, res: Response) {
 
     const domain = process.env.DOMAIN || 'http://localhost:3000';
 
-    res.render('users/user', {
+    res.render('admin/user', {
       layout: false,
       sessionUser,
       targetUser: { ...user, ...account },
