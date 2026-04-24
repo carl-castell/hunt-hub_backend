@@ -50,7 +50,7 @@ export async function getEstate(req: Request, res: Response) {
       .where(eq(usersTable.estateId, Number(id)));
 
     res.render('admin/estate', {
-      layout: false,
+      title: estate.name,
       user,
       estate,
       managers,

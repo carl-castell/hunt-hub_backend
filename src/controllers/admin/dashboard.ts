@@ -9,7 +9,7 @@ export async function getDashboard(req: Request, res: Response) {
 
     const estates = await db.select().from(estatesTable);
     res.render('admin/admin-dashboard', {
-      layout: false,
+      title: 'Dashboard',
       user,
       estates
     });

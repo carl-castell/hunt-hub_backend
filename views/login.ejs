@@ -9,10 +9,10 @@
   <body class="centered-page">
     <div class="card centered-card">
       <h1>Hunt-Hub</h1>
-      <p class="subtitle">Sign in to your account</p>
+      <p>Sign in to your account</p>
 
       <% if (error) { %>
-        <div class="alert alert-error"><%= error %></div>
+        <div class="alert-error"><%= error %></div>
       <% } %>
 
       <form action="/login" method="POST">

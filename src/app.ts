@@ -92,6 +92,10 @@ app.use(express.static(path.join(process.cwd(), "public")));
 
 app.use("/", homeRouter);
 app.use("/", authRouter);
+app.use('/admin', requireAdmin, (req, res, next) => {
+  res.locals.layout = 'admin/layout';
+  next();
+});
 app.use("/admin", requireAdmin, adminRouter);
 app.use('/map', requireAuth, mapRouter);
 

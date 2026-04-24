@@ -1,113 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Hunt-Hub | Admin Dashboard</title>
-  <link rel="stylesheet" href="/css/style.css" />
-</head>
-<body>
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+  <h2 style="margin: 0;">Estates</h2>
+  <button class="outline" data-dialog="create-estate-dialog">+ New Estate</button>
+</div>
 
-  <header>
-    <h1>Hunt-Hub <span style="font-weight:300; font-size:1rem;">Admin Dashboard</span></h1>
-    <form action="/logout" method="POST">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <button type="submit">Log Out</button>
-    </form>
-  </header>
+<% if (estates && estates.length > 0) { %>
+  <ul style="list-style: none; padding: 0;">
+    <% estates.forEach(function(estate) { %>
+      <li style="margin-bottom: 0.5rem;">
+        <a href="/admin/estates/<%= estate.id %>"><%= estate.name %></a>
+      </li>
+    <% }); %>
+  </ul>
+<% } else { %>
+  <p style="color: var(--pico-muted-color);">No estates yet. Create one to get started.</p>
+<% } %>
 
-  <div class="content">
-
-    <div class="welcome">
-      <h2>Welcome, <%= user.firstName %> <span class="badge">Admin</span></h2>
-      <p>You have full administrative access. Use this dashboard to manage users, content, and system settings.</p>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <h3>Estates</h3>
-      </div>
-
-      <% if (estates && estates.length > 0) { %>
-        <ul class="estate-list">
-          <% estates.forEach(function(estate) { %>
-            <li>
-              <a href="/admin/estates/<%= estate.id %>">
-                <span class="estate-name"><%= estate.name %></span>
-                <span class="arrow">›</span>
-              </a>
-            </li>
-          <% }); %>
-        </ul>
-      <% } else { %>
-        <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/>
-          </svg>
-          <p>No estates found.</p>
-          <span>Click the <strong>+</strong> button below to create your first estate.</span>
-        </div>
-      <% } %>
-
-      <div class="add-btn-row">
-        <button class="add-btn" id="openModal" title="Create new estate">+</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Create Estate Modal -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <button class="close-modal" id="closeModal">&times;</button>
+<!-- ── Create Estate Dialog ──────────────────────────────────────────────── -->
+<dialog id="create-estate-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="create-estate-dialog"></button>
       <h3>Create New Estate</h3>
-      <form action="/admin/estates" method="POST">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <label for="estateName">Estate Name</label>
-        <input
-          type="text"
-          id="estateName"
-          name="name"
-          placeholder="Enter estate name…"
-          required
-          autocomplete="off"
-          style="width:100%; padding:10px 14px; border:1px solid #ddd; border-radius:6px; font-size:0.95rem; outline:none; margin: 8px 0 24px;"
-        />
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
-          <button type="submit" class="btn-confirm">Confirm</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    const overlay = document.getElementById('modalOverlay');
-    const openBtn = document.getElementById('openModal');
-    const closeBtn = document.getElementById('closeModal');
-    const cancelBtn = document.getElementById('cancelBtn');
-
-    function openModal() {
-      overlay.classList.add('active');
-      document.getElementById('estateName').focus();
-    }
-
-    function closeModal() {
-      overlay.classList.remove('active');
-      document.getElementById('estateName').value = '';
-    }
-
-    openBtn.addEventListener('click', openModal);
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-
-    overlay.addEventListener('click', function(e) {
-      if (e.target === overlay) closeModal();
-    });
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeModal();
-    });
-  </script>
-
-</body>
-</html>
+    </header>
+    <form action="/admin/estates" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>
+        Estate Name
+        <input type="text" name="name" placeholder="Enter estate name…" required autocomplete="off" />
+      </label>
+      <footer>
+        <button type="button" class="outline" data-close-dialog="create-estate-dialog">Cancel</button>
+        <button type="submit">Create</button>
+      </footer>
+    </form>
+  </article>
+</dialog>

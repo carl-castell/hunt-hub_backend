@@ -1,191 +1,101 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Hunt-Hub | <%= estate.name %></title>
-  <link rel="stylesheet" href="/css/style.css" />
-</head>
-<body>
+<a href="/admin" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Dashboard</a>
 
-  <header>
-    <h1>Hunt-Hub <span style="font-weight:300; font-size:1rem;">Admin Dashboard</span></h1>
-    <div class="header-actions">
-      <a href="/admin" class="btn-back">← Dashboard</a>
-      <form action="/logout" method="POST">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit">Log Out</button>
-      </form>
-    </div>
-  </header>
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.25rem;">
+  <h2 style="margin: 0;"><%= estate.name %></h2>
+  <button class="outline" data-dialog="rename-estate-dialog">Edit</button>
+</div>
+<p style="color: var(--pico-muted-color); margin-bottom: 2rem; font-size: 0.875rem;">Estate ID: <%= estate.id %></p>
 
-  <div class="content">
+<!-- Managers List -->
+<section>
+  <h3>Managers</h3>
+  <% if (managers && managers.length > 0) { %>
+    <ul style="list-style: none; padding: 0;">
+      <% managers.forEach(function(manager) { %>
+        <li style="margin-bottom: 0.5rem;">
+          <a href="/users/<%= manager.id %>"><%= manager.firstName %> <%= manager.lastName %></a>
+          <span style="color: var(--pico-muted-color); font-size: 0.875rem; margin-left: 0.5rem;"><%= manager.email %></span>
+        </li>
+      <% }); %>
+    </ul>
+  <% } else { %>
+    <p style="color: var(--pico-muted-color);">No managers yet.</p>
+  <% } %>
+  <button class="outline" style="margin-top: 1rem;" data-dialog="add-manager-dialog">+ Add Manager</button>
+</section>
 
-    <!-- Estate Name Card -->
-    <div class="card">
-      <div class="estate-name-row">
-        <h2 id="estateName"><%= estate.name %></h2>
-        <button class="btn-icon" id="editNameBtn" title="Edit name">✏️</button>
-      </div>
-      <p class="estate-meta">Estate ID: <%= estate.id %></p>
+<!-- Danger Zone -->
+<section style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--pico-muted-border-color);">
+  <h4 style="color: var(--pico-del-color);">Danger Zone</h4>
+  <p>Permanently delete this estate and all its data.</p>
+  <button class="contrast outline" data-dialog="delete-estate-dialog">Delete Estate</button>
+</section>
 
-      <!-- Edit Name Form -->
-      <form class="edit-name-form" id="editNameForm" action="/admin/estates/<%= estate.id %>/rename" method="POST">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+<!-- ── Rename Estate Dialog ───────────────────────────────────────────────── -->
+<dialog id="rename-estate-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="rename-estate-dialog"></button>
+      <h3>Rename Estate</h3>
+    </header>
+    <form action="/admin/estates/<%= estate.id %>/rename" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>
+        Estate Name
         <input type="text" name="name" value="<%= estate.name %>" required autocomplete="off" />
-        <button type="submit" class="btn-save">Save</button>
-        <button type="button" class="btn-cancel-edit" id="cancelEditBtn">Cancel</button>
-      </form>
+      </label>
+      <footer>
+        <button type="button" class="outline" data-close-dialog="rename-estate-dialog">Cancel</button>
+        <button type="submit">Save</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
 
-      <form action="/admin/estates/<%= estate.id %>/delete" method="POST" id="deleteForm">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      </form>
-      <div class="danger-zone">
-        <p>Permanently delete this estate and all its data.</p>
-        <div id="deleteConfirm" style="display:none; display:flex; gap:10px; align-items:center;">
-          <span style="font-size:0.875rem; color:#e53e3e;">Are you sure?</span>
-          <button type="button" class="btn-delete" id="confirmDeleteBtn">Yes, delete</button>
-          <button type="button" class="btn-cancel-edit" id="cancelDeleteBtn">Cancel</button>
-        </div>
-        <button type="button" class="btn-delete" id="deleteBtn">Delete Estate</button>
-      </div>
-    </div>
-
-    <!-- Managers Card -->
-    <div class="card">
-      <div class="card-header">
-        <h3>Managers</h3>
-      </div>
-
-      <% if (managers && managers.length > 0) { %>
-        <ul class="manager-list">
-          <% managers.forEach(function(manager) { %>
-            <li class="manager-item">
-              <div class="manager-info">
-                <span class="manager-name">
-                  <a href="/users/<%= manager.id %>" style="color:#222; text-decoration:none;">
-                    <%= manager.firstName %> <%= manager.lastName %>
-                  </a>
-                </span>
-                <span class="manager-email"><%= manager.email %></span>
-              </div>
-            </li>
-          <% }); %>
-        </ul>
-      <% } else { %>
-        <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-          </svg>
-          <p>No managers yet.</p>
-          <span>Click the <strong>+</strong> button below to add one.</span>
-        </div>
-      <% } %>
-
-      <div class="add-btn-row">
-        <button class="add-btn" id="openModal" title="Add manager">+</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Add Manager Modal -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <button class="close-modal" id="closeModal">&times;</button>
+<!-- ── Add Manager Dialog ─────────────────────────────────────────────────── -->
+<dialog id="add-manager-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="add-manager-dialog"></button>
       <h3>Add Manager</h3>
-      <form action="/users/managers" method="POST">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <input type="hidden" name="estateId" value="<%= estate.id %>" />
-        <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input type="text" id="firstName" name="firstName" placeholder="First name" required autocomplete="off" />
-        </div>
-        <div class="form-group">
-          <label for="lastName">Last Name</label>
-          <input type="text" id="lastName" name="lastName" placeholder="Last name" required autocomplete="off" />
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" placeholder="manager@example.com" required autocomplete="off" />
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
-          <button type="submit" class="btn-confirm">Add Manager</button>
-        </div>
-      </form>
+    </header>
+    <form action="/users/managers" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="estateId" value="<%= estate.id %>" />
+      <label>
+        First Name
+        <input type="text" name="firstName" placeholder="First name" required autocomplete="off" />
+      </label>
+      <label>
+        Last Name
+        <input type="text" name="lastName" placeholder="Last name" required autocomplete="off" />
+      </label>
+      <label>
+        Email
+        <input type="email" name="email" placeholder="manager@example.com" required autocomplete="off" />
+      </label>
+      <footer>
+        <button type="button" class="outline" data-close-dialog="add-manager-dialog">Cancel</button>
+        <button type="submit">Add Manager</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
 
-    </div>
-  </div>
-
-  <script>
-
-    // Edit name toggle
-    const editBtn = document.getElementById('editNameBtn');
-    const editForm = document.getElementById('editNameForm');
-    const cancelEdit = document.getElementById('cancelEditBtn');
-
-    editBtn.addEventListener('click', () => {
-      editForm.style.display = 'flex';
-      editBtn.style.display = 'none';
-    });
-
-    cancelEdit.addEventListener('click', () => {
-      editForm.style.display = 'none';
-      editBtn.style.display = 'inline-block';
-    });
-
-    // Delete confirmation
-    const deleteBtn = document.getElementById('deleteBtn');
-    const deleteConfirm = document.getElementById('deleteConfirm');
-    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-
-    // Reset on load
-    deleteConfirm.style.display = 'none';
-    deleteBtn.style.display = 'inline-block';
-
-    deleteBtn.addEventListener('click', () => {
-      deleteBtn.style.display = 'none';
-      deleteConfirm.style.display = 'flex';
-    });
-
-    cancelDeleteBtn.addEventListener('click', () => {
-      deleteConfirm.style.display = 'none';
-      deleteBtn.style.display = 'inline-block';
-    });
-
-    confirmDeleteBtn.addEventListener('click', () => {
-      document.getElementById('deleteForm').submit();
-    });
-
-
-    // Add manager modal
-    const overlay = document.getElementById('modalOverlay');
-    const openBtn = document.getElementById('openModal');
-    const closeBtn = document.getElementById('closeModal');
-    const cancelBtn = document.getElementById('cancelBtn');
-
-    function openModal() {
-      overlay.classList.add('active');
-      document.getElementById('firstName').focus();
-    }
-
-    function closeModal() {
-      overlay.classList.remove('active');
-    }
-
-    openBtn.addEventListener('click', openModal);
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeModal();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
-    });
-  </script>
-
-</body>
-</html>
+<!-- ── Delete Estate Dialog ───────────────────────────────────────────────── -->
+<dialog id="delete-estate-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="delete-estate-dialog"></button>
+      <h3>Delete Estate</h3>
+    </header>
+    <p>Are you sure you want to permanently delete <strong><%= estate.name %></strong> and all its data? This cannot be undone.</p>
+    <form action="/admin/estates/<%= estate.id %>/delete" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <footer>
+        <button type="button" class="outline" data-close-dialog="delete-estate-dialog">Cancel</button>
+        <button type="submit" class="contrast">Delete</button>
+      </footer>
+    </form>
+  </article>
+</dialog>

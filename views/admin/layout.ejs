@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %> | Hunt-Hub Admin</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      nav.top-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 2rem;
+        border-bottom: 1px solid var(--pico-muted-border-color);
+      }
+      nav.top-nav .brand {
+        font-weight: 700;
+        font-size: 1.2rem;
+        text-decoration: none;
+        color: inherit;
+      }
+      nav.top-nav .section-label {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--pico-muted-color);
+      }
+      nav.top-nav .manager-name a {
+        text-decoration: none;
+        color: inherit;
+        font-weight: 500;
+      }
+      nav.top-nav .manager-name a:hover {
+        text-decoration: underline;
+      }
+      main.admin-content {
+        flex: 1;
+        padding: 2rem;
+        max-width: 1100px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      dialog article {
+        min-width: 360px;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="top-nav">
+      <a href="/admin" class="brand">Hunt-Hub</a>
+      <span class="section-label">Admin</span>
+      <details class="dropdown" style="margin: 0">
+        <summary><%= user.firstName %> <%= user.lastName %></summary>
+        <ul>
+          <li>
+            <form method="POST" action="/logout" style="margin: 0">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button
+                type="submit"
+                class="outline"
+                style="width: 100%; text-align: left"
+              >
+                Log Out
+              </button>
+            </form>
+          </li>
+        </ul>
+      </details>
+    </nav>
+
+    <main class="admin-content"><%- body %></main>
+
+    <script src="/js/dialogs.js"></script>
+  </body>
+</html>
