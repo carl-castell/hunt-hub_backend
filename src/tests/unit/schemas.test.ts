@@ -4,6 +4,8 @@ import {
   createManagerSchema,
   updateUserSchema,
   activateSchema,
+  createEstateSchema,
+  renameEstateSchema,
 } from '@/schemas';
 
 // ── loginSchema ───────────────────────────────────────────────────────────────
@@ -170,6 +172,54 @@ describe('activateSchema', () => {
 
   it('fails with missing fields', () => {
     const result = activateSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+// ── createEstateSchema ────────────────────────────────────────────────────────
+
+describe('createEstateSchema', () => {
+  it('passes with a valid name', () => {
+    const result = createEstateSchema.safeParse({ name: 'Glenfern Estate' });
+    expect(result.success).toBe(true);
+  });
+
+  it('fails with an empty name', () => {
+    const result = createEstateSchema.safeParse({ name: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('fails with a name exceeding 256 characters', () => {
+    const result = createEstateSchema.safeParse({ name: 'a'.repeat(257) });
+    expect(result.success).toBe(false);
+  });
+
+  it('fails with missing name field', () => {
+    const result = createEstateSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+// ── renameEstateSchema ────────────────────────────────────────────────────────
+
+describe('renameEstateSchema', () => {
+  it('passes with a valid name', () => {
+    const result = renameEstateSchema.safeParse({ name: 'New Estate Name' });
+    expect(result.success).toBe(true);
+  });
+
+  it('fails with an empty name', () => {
+    const result = renameEstateSchema.safeParse({ name: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('fails with a name exceeding 256 characters', () => {
+    const result = renameEstateSchema.safeParse({ name: 'a'.repeat(257) });
+    expect(result.success).toBe(false);
+  });
+
+  it('fails with missing name field', () => {
+    const result = renameEstateSchema.safeParse({});
     expect(result.success).toBe(false);
   });
 });

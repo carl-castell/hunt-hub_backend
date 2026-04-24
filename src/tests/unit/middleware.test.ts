@@ -17,6 +17,7 @@ import {
   requireManager,
   requireStaff,
   requireEstateAccess,
+  requireUserAccess,
 } from '@/middlewares/requireRole';
 
 const mockLimit = vi.mocked(db as any).limit as ReturnType<typeof vi.fn>;
@@ -253,6 +254,80 @@ describe('requireEstateAccess', () => {
     requireEstateAccess(req as Request, res as Response, next);
 
     expect(res.redirect).toHaveBeenCalledWith('/login');
+    expect(next).not.toHaveBeenCalled();
+  });
+});
+
+// ── requireUserAccess ─────────────────────────────────────────────────────────
+
+describe('requireUserAccess', () => {
+  beforeEach(() => {
+    vi.mocked(db as any).select.mockClear();
+    vi.mocked(db as any).from.mockClear();
+    vi.mocked(db as any).where.mockClear();
+    mockLimit.mockReset();
+  });
+
+  it('redirects to /login if no session', async () => {
+    const req = mockReq({ session: {} as any, params: { id: '10' } });
+    const res = mockRes();
+    const next = mockNext();
+
+    await requireUserAccess(req as Request, res as Response, next);
+
+    expect(res.redirect).toHaveBeenCalledWith('/login');
+    expect(next).not.toHaveBeenCalled();
+    expect(vi.mocked(db as any).select).not.toHaveBeenCalled();
+  });
+
+  it('calls next() immediately for admin without a DB lookup', async () => {
+    const req = mockReq({ session: { user: { id: 1, role: 'admin', estateId: null } } as any, params: { id: '10' } });
+    const res = mockRes();
+    const next = mockNext();
+
+    await requireUserAccess(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(vi.mocked(db as any).select).not.toHaveBeenCalled();
+  });
+
+  it('calls next() if manager estateId matches target user estateId', async () => {
+    mockLimit.mockResolvedValueOnce([{ id: 10, estateId: 5 }]);
+
+    const req = mockReq({ session: { user: { id: 2, role: 'manager', estateId: 5 } } as any, params: { id: '10' } });
+    const res = mockRes();
+    const next = mockNext();
+
+    await requireUserAccess(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('returns 403 if manager estateId does not match target user estateId', async () => {
+    mockLimit.mockResolvedValueOnce([{ id: 10, estateId: 99 }]);
+
+    const req = mockReq({ session: { user: { id: 2, role: 'manager', estateId: 5 } } as any, params: { id: '10' } });
+    const res = mockRes();
+    const next = mockNext();
+
+    await requireUserAccess(req as Request, res as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.send).toHaveBeenCalledWith('Forbidden');
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 if target user does not exist', async () => {
+    mockLimit.mockResolvedValueOnce([]);
+
+    const req = mockReq({ session: { user: { id: 2, role: 'manager', estateId: 5 } } as any, params: { id: '999' } });
+    const res = mockRes();
+    const next = mockNext();
+
+    await requireUserAccess(req as Request, res as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith('User not found');
     expect(next).not.toHaveBeenCalled();
   });
 });
