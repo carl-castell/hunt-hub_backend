@@ -1,0 +1,51 @@
+<style>
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .page-header h2 { margin: 0; }
+</style>
+
+<div class="page-header">
+  <h2>Guest Groups</h2>
+  <button data-dialog="create-group-dialog">+ New Group</button>
+</div>
+
+<article>
+  <% if (groups.length === 0) { %>
+    <p style="text-align:center; padding:2rem 0; color:var(--pico-muted-color); margin:0;">No groups yet.</p>
+  <% } else { %>
+    <figure style="margin:0;">
+      <table>
+        <thead>
+          <tr>
+            <th>Group Name</th>
+            <th style="text-align:right;">Members</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% groups.forEach(group => { %>
+            <tr style="cursor:pointer;" data-href="/manager/guest-groups/<%= group.id %>">
+              <td><%= group.name %></td>
+              <td style="text-align:right; color:var(--pico-muted-color);"><%= group.memberCount %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </figure>
+  <% } %>
+</article>
+
+<dialog id="create-group-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="create-group-dialog"></button>
+      <h3>New Guest Group</h3>
+    </header>
+    <form method="POST" action="/manager/guest-groups">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Group Name<input type="text" name="name" required maxlength="255" /></label>
+      <footer>
+        <button type="button" class="outline" data-close-dialog="create-group-dialog">Cancel</button>
+        <button type="submit">Create</button>
+      </footer>
+    </form>
+  </article>
+</dialog>

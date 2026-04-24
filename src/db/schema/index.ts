@@ -15,3 +15,4 @@ export * from './template_groups';
 export * from './template_stand_assignments';
 export * from './drive_groups';
 export * from './drive_stand_assignments';
+export * from './guest_groups';

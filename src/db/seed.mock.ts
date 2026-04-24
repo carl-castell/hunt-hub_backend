@@ -50,7 +50,7 @@ export async function seedMockData() {
 
   console.log(`  ✔ Activation token created: ${token}`);
 
-  // 5. Create 60 guests
+  // 5. Create 400 guests
   const guestUsers = await db
     .insert(usersTable)
     .values(

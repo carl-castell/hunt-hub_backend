@@ -35,7 +35,10 @@
 
 <div class="guests-header">
   <h2>Guests</h2>
-  <button data-dialog="add-guest-dialog">+ Add Guest</button>
+  <div style="display:flex; gap:0.5rem;">
+    <a href="/manager/guest-groups" role="button" class="outline">Guest Groups</a>
+    <button data-dialog="add-guest-dialog">+ Add Guest</button>
+  </div>
 </div>
 
 <article>
@@ -77,6 +80,7 @@
             <th class="<%= sortBy === 'rating' ? 'active-sort' : '' %>">
               <a href="<%= sortUrl('rating') %>">Rating<%= sortArrow('rating') %></a>
             </th>
+            <th>Groups</th>
           </tr>
         </thead>
         <tbody>
@@ -86,11 +90,12 @@
               <td><%= guest.lastName %></td>
               <td style="color:var(--pico-muted-color);"><%= fmtDate(guest.dateOfBirth) %></td>
               <td style="color:var(--pico-muted-color);"><%= guest.rating != null ? guest.rating + ' / 5' : '—' %></td>
+              <td style="color:var(--pico-muted-color);"><%= guest.groups.length > 0 ? guest.groups.join(', ') : '—' %></td>
             </tr>
           <% }) %>
           <% if (hasMore) { %>
             <tr id="load-more-row">
-              <td colspan="4" style="text-align:center; padding:1rem;">
+              <td colspan="5" style="text-align:center; padding:1rem;">
                 <button class="outline"
                   hx-get="/manager/guests?offset=<%= nextOffset %>&sortBy=<%= sortBy %>&sortDir=<%= sortDir %>&search=<%= encodeURIComponent(search) %>"
                   hx-target="#load-more-row"

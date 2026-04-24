@@ -60,6 +60,7 @@
         <span class="guest-meta-label">Phone</span>       <span><%= guest.phone || '—' %></span>
         <span class="guest-meta-label">Date of Birth</span><span><%= fmtDate(guest.dateOfBirth) %></span>
         <span class="guest-meta-label">Rating</span>      <span><%= guest.rating != null ? guest.rating + ' / 5' : '—' %></span>
+        <span class="guest-meta-label">Groups</span>      <span><%= guestGroups.length > 0 ? guestGroups.map(g => g.name).join(', ') : '—' %></span>
       </div>
     </div>
     <details class="dropdown" style="margin: 0;">
@@ -71,6 +72,77 @@
     </details>
   </div>
 </article>
+
+<!-- Guest Groups -->
+<article style="margin-top: 1.5rem;">
+  <div class="section-header">
+    <h3>Groups</h3>
+    <button class="outline" data-dialog="add-to-group-dialog">+ Add to Group</button>
+  </div>
+  <% if (guestGroups.length === 0) { %>
+    <p style="color:var(--pico-muted-color); margin:0;">Not assigned to any group.</p>
+  <% } else { %>
+    <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+      <% guestGroups.forEach(g => { %>
+        <span style="display:inline-flex; align-items:center; gap:0.4rem; background:var(--pico-code-background); border:1px solid var(--pico-muted-border-color); padding:0.25rem 0.6rem; border-radius:4px; font-size:0.9rem;">
+          <a href="/manager/guest-groups/<%= g.id %>" style="text-decoration:none; color:inherit;"><%= g.name %></a>
+          <form method="POST" action="/manager/guests/<%= guest.id %>/remove-from-group/<%= g.id %>" style="margin:0; line-height:1;">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit" style="background:none; border:none; padding:0; cursor:pointer; color:var(--pico-muted-color); font-size:0.8rem; line-height:1;" title="Remove from group">✕</button>
+          </form>
+        </span>
+      <% }) %>
+    </div>
+  <% } %>
+</article>
+
+<!-- Add to Group dialog -->
+<dialog id="add-to-group-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="add-to-group-dialog"></button>
+      <h3>Add to Group</h3>
+    </header>
+    <form method="POST" action="/manager/guests/<%= guest.id %>/add-to-group">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <% if (availableGroups.length > 0) { %>
+        <label>
+          Existing group
+          <select name="groupId" id="atg-select">
+            <option value="">— select a group —</option>
+            <% availableGroups.forEach(g => { %>
+              <option value="<%= g.id %>"><%= g.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <p style="text-align:center; color:var(--pico-muted-color); margin:0.5rem 0;">or</p>
+      <% } %>
+      <label>
+        Create new group
+        <input type="text" name="newGroupName" id="atg-new" placeholder="New group name…" maxlength="255" />
+      </label>
+      <footer>
+        <button type="button" class="outline" data-close-dialog="add-to-group-dialog">Cancel</button>
+        <button type="submit">Add</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+<script>
+  (function () {
+    const sel = document.getElementById('atg-select');
+    const inp = document.getElementById('atg-new');
+    if (!sel || !inp) return;
+    sel.addEventListener('change', () => {
+      if (sel.value) { inp.value = ''; inp.disabled = true; }
+      else inp.disabled = false;
+    });
+    inp.addEventListener('input', () => {
+      if (inp.value.trim()) { sel.value = ''; sel.disabled = true; }
+      else sel.disabled = false;
+    });
+  })();
+</script>
 
 <!-- Licenses & Certificates -->
 <article style="margin-top: 1.5rem;">

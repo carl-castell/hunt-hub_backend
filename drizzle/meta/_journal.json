@@ -8,6 +8,20 @@
       "when": 1777046636179,
       "tag": "0000_even_toro",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777054932864,
+      "tag": "0001_flowery_wrecker",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777055825463,
+      "tag": "0002_motionless_maginty",
+      "breakpoints": true
     }
   ]
 }

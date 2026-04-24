@@ -1,0 +1,92 @@
+<style>
+  .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .group-header h2 { margin: 0; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .section-header h3 { margin: 0; }
+</style>
+
+<div class="group-header">
+  <div>
+    <p style="margin:0 0 0.25rem; color:var(--pico-muted-color); font-size:0.85rem;"><a href="/manager/guest-groups">Guest Groups</a></p>
+    <h2 style="margin:0;"><%= group.name %></h2>
+  </div>
+  <details class="dropdown" style="margin:0;">
+    <summary role="button" class="outline" style="padding:0.4rem 0.8rem;">⚙</summary>
+    <ul dir="rtl">
+      <li><a href="#" data-dialog="rename-group-dialog">Rename</a></li>
+      <li><a href="#" style="color:var(--pico-del-color);" data-dialog="delete-group-dialog">Delete</a></li>
+    </ul>
+  </details>
+</div>
+
+<article>
+  <div class="section-header">
+    <h3>Members</h3>
+  </div>
+
+  <% if (members.length === 0) { %>
+    <p style="text-align:center; padding:2rem 0; color:var(--pico-muted-color); margin:0;">No members yet.</p>
+  <% } else { %>
+    <figure style="margin:0;">
+      <table>
+        <thead>
+          <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% members.forEach(member => { %>
+            <tr style="cursor:pointer;" data-href="/manager/guests/<%= member.id %>">
+              <td><%= member.firstName %></td>
+              <td><%= member.lastName %></td>
+              <td style="text-align:right;">
+                <form method="POST" action="/manager/guest-groups/<%= group.id %>/members/<%= member.id %>/remove" style="margin:0;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="outline secondary" style="padding:0.25rem 0.75rem; font-size:0.85rem;">Remove</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </figure>
+  <% } %>
+</article>
+
+<!-- Rename dialog -->
+<dialog id="rename-group-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="rename-group-dialog"></button>
+      <h3>Rename Group</h3>
+    </header>
+    <form method="POST" action="/manager/guest-groups/<%= group.id %>/rename">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Group Name<input type="text" name="name" value="<%= group.name %>" required maxlength="255" /></label>
+      <footer>
+        <button type="button" class="outline" data-close-dialog="rename-group-dialog">Cancel</button>
+        <button type="submit">Save</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- Delete dialog -->
+<dialog id="delete-group-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="delete-group-dialog"></button>
+      <h3>Delete Group</h3>
+    </header>
+    <p>Are you sure you want to delete <strong><%= group.name %></strong>? All member assignments will be removed.</p>
+    <form method="POST" action="/manager/guest-groups/<%= group.id %>/delete">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <footer>
+        <button type="button" class="outline" data-close-dialog="delete-group-dialog">Cancel</button>
+        <button type="submit" class="contrast">Delete</button>
+      </footer>
+    </form>
+  </article>
+</dialog>

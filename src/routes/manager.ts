@@ -2,7 +2,7 @@ import express, { Router } from 'express';
 import { getDashboard } from '../controllers/manager/dashboard';
 import { getEstate, postRenameEstate } from '../controllers/manager/estate';
 import { getArea, postCreateArea, postRenameArea, postDeleteArea, postUploadGeofile, postDeleteGeofile } from '../controllers/manager/areas';
-import { getGuests, getNewGuest, postCreateGuest, getGuest, postUpdateGuest, postDeleteGuest } from '../controllers/manager/guests';
+import { getGuests, getNewGuest, postCreateGuest, getGuest, postUpdateGuest, postDeleteGuest, postGuestAddToGroup, postGuestRemoveFromGroup } from '../controllers/manager/guests';
 import { getEvents, getEvent, postCreateEvent, postUpdateEvent, postDeleteEvent } from '../controllers/manager/events';
 import { postCreateDrive, getDrive } from '../controllers/manager/drives';
 import {
@@ -10,6 +10,7 @@ import {
   getUser, postUpdateUserRole, postDeleteUser, postDeactivateUser, postResendActivation, postReactivateUser,
 } from '../controllers/manager/people';
 import { getAccount, postChangePassword } from '../controllers/manager/account';
+import { getGroups, postCreateGroup, getGroup, postRenameGroup, postDeleteGroup, postAddMember, postRemoveMember } from '../controllers/manager/guest_groups';
 import {
   getHuntingLicense, postCreateHuntingLicense, postCheckHuntingLicense, postDeleteHuntingLicense, postUpdateHuntingLicense,
   getTrainingCertificate, postCreateTrainingCertificate, postCheckTrainingCertificate, postDeleteTrainingCertificate, postUpdateTrainingCertificate,
@@ -42,6 +43,8 @@ managerRouter.get('/guests',                          getGuests);
 managerRouter.get('/guests/new',                      getNewGuest);
 managerRouter.post('/guests',                         postCreateGuest);
 managerRouter.get('/guests/:id',                      getGuest);
+managerRouter.post('/guests/:id/add-to-group',                    postGuestAddToGroup);
+managerRouter.post('/guests/:id/remove-from-group/:groupId',      postGuestRemoveFromGroup);
 managerRouter.post('/guests/:id/update',              postUpdateGuest);
 managerRouter.post('/guests/:id/delete',              postDeleteGuest);
 
@@ -83,6 +86,15 @@ managerRouter.post('/people/:id/delete',              postDeleteUser);
 managerRouter.post('/people/:id/deactivate',          postDeactivateUser);
 managerRouter.post('/people/:id/reactivate',          postReactivateUser);
 managerRouter.post('/people/:id/resend-activation',   postResendActivation);
+
+// Guest Groups
+managerRouter.get('/guest-groups',                                  getGroups);
+managerRouter.post('/guest-groups',                                 postCreateGroup);
+managerRouter.get('/guest-groups/:id',                              getGroup);
+managerRouter.post('/guest-groups/:id/rename',                      postRenameGroup);
+managerRouter.post('/guest-groups/:id/delete',                      postDeleteGroup);
+managerRouter.post('/guest-groups/:id/members',                     postAddMember);
+managerRouter.post('/guest-groups/:id/members/:userId/remove',      postRemoveMember);
 
 // Account
 managerRouter.get('/account',                         getAccount);
