@@ -135,7 +135,7 @@ export async function getHuntingLicense(req: Request, res: Response) {
       .where(eq(huntingLicenseAttachmentsTable.licenseId, license.id))
       .orderBy(desc(huntingLicenseAttachmentsTable.uploadDate));
 
-    res.render('manager/hunting-license', {
+    res.render('manager/guests/hunting-license', {
       title: 'Hunting License',
       user,
       guest,
@@ -337,7 +337,7 @@ export async function getTrainingCertificate(req: Request, res: Response) {
       .where(eq(trainingCertificateAttachmentsTable.certId, certificate.id))
       .orderBy(desc(trainingCertificateAttachmentsTable.uploadDate));
 
-    res.render('manager/training-certificate', {
+    res.render('manager/guests/training-certificate', {
       title: 'Training Certificate',
       user,
       guest,

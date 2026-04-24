@@ -78,7 +78,7 @@ export async function getArea(req: Request, res: Response) {
       { label: 'Estate', href: '/manager/estate' },
       { label: area.name },
     ];
-    res.render('manager/area', { title: area.name, user, area, breadcrumbs });
+    res.render('manager/estate/area', { title: area.name, user, area, breadcrumbs });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

@@ -100,9 +100,9 @@ export async function getGuests(req: Request, res: Response) {
 
     if (isPartial) {
       res.locals.layout = false;
-      return res.render('manager/guests-rows', viewData);
+      return res.render('manager/guests/list-rows', viewData);
     }
-    res.render('manager/guests', { title: 'Guests', ...viewData, breadcrumbs: [{ label: 'Guests' }] });
+    res.render('manager/guests/list', { title: 'Guests', ...viewData, breadcrumbs: [{ label: 'Guests' }] });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -110,7 +110,7 @@ export async function getGuests(req: Request, res: Response) {
 }
 
 export async function getNewGuest(req: Request, res: Response) {
-  res.render('manager/guest-new', { title: 'Add Guest', breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: 'New Guest' }], user: req.session.user!, error: null });
+  res.render('manager/guests/new', { title: 'Add Guest', breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: 'New Guest' }], user: req.session.user!, error: null });
 }
 
 export async function postCreateGuest(req: Request, res: Response) {
@@ -119,7 +119,7 @@ export async function postCreateGuest(req: Request, res: Response) {
 
     const result = createGuestSchema.safeParse(req.body);
     if (!result.success) {
-      return res.render('manager/guest-new', {
+      return res.render('manager/guests/new', {
         title: 'Add Guest',
         user,
         error: result.error.issues[0].message,
@@ -181,7 +181,7 @@ export async function getGuest(req: Request, res: Response) {
     const assignedGroupIds = new Set(guestGroupRows.map(g => g.id));
     const availableGroups = allGroups.filter(g => !assignedGroupIds.has(g.id));
 
-    res.render('manager/guest', {
+    res.render('manager/guests/show', {
       title: 'Guest',
       user,
       guest,

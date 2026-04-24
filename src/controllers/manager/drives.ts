@@ -60,7 +60,7 @@ export async function getDrive(req: Request, res: Response) {
 
     if (!drive) return res.status(404).send('Drive not found');
 
-    res.render('manager/drive', { title: drive.name, user, event, drive, breadcrumbs: [{ label: 'Events', href: '/manager/events' }, { label: event.eventName, href: `/manager/events/${event.id}` }, { label: drive.name }] });
+    res.render('manager/events/drive', { title: drive.name, user, event, drive, breadcrumbs: [{ label: 'Events', href: '/manager/events' }, { label: event.eventName, href: `/manager/events/${event.id}` }, { label: drive.name }] });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

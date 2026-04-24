@@ -34,7 +34,7 @@ export async function getGroups(req: Request, res: Response) {
       .groupBy(guestGroupsTable.id)
       .orderBy(guestGroupsTable.name);
 
-    res.render('manager/guest-groups', { title: 'Guest Groups', user, groups, breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: 'Guest Groups' }] });
+    res.render('manager/guests/groups', { title: 'Guest Groups', user, groups, breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: 'Guest Groups' }] });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -75,7 +75,7 @@ export async function getGroup(req: Request, res: Response) {
       .where(eq(guestGroupMembersTable.groupId, groupId))
       .orderBy(usersTable.lastName, usersTable.firstName);
 
-    res.render('manager/guest-group', { title: group.name, user, group, members: memberRows, breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: 'Guest Groups', href: '/manager/guest-groups' }, { label: group.name }] });
+    res.render('manager/guests/group', { title: group.name, user, group, members: memberRows, breadcrumbs: [{ label: 'Guests', href: '/manager/guests' }, { label: 'Guest Groups', href: '/manager/guest-groups' }, { label: group.name }] });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

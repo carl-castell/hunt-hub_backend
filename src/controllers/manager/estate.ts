@@ -39,7 +39,7 @@ export async function getEstate(req: Request, res: Response) {
       return a.lastName.localeCompare(b.lastName);
     });
 
-    res.render('manager/estate', {
+    res.render('manager/estate/show', {
       title: 'Estate',
       user,
       estate,

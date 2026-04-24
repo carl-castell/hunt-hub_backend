@@ -40,7 +40,7 @@ export async function getInvitation(req: Request, res: Response) {
 
     const invitation = { ...row.invitations, ...row.users };
 
-    res.render('manager/invitation', {
+    res.render('manager/invitations/show', {
       title: `${row.users.firstName} ${row.users.lastName}`,
       user,
       event,
@@ -95,10 +95,10 @@ export async function getInvitationList(req: Request, res: Response) {
     const isPartial = req.headers['hx-request'] === 'true';
     if (isPartial) {
       res.locals.layout = false;
-      return res.render('manager/invitation-list-rows', { event, invitations });
+      return res.render('manager/invitations/list-rows', { event, invitations });
     }
 
-    res.render('manager/invitation-list', {
+    res.render('manager/invitations/list', {
       title: 'Guest List',
       user,
       event,
@@ -196,10 +196,10 @@ export async function getInvitationPicker(req: Request, res: Response) {
 
     if (isPartial) {
       res.locals.layout = false;
-      return res.render('manager/invitation-picker-rows', viewData);
+      return res.render('manager/invitations/picker-rows', viewData);
     }
 
-    res.render('manager/invitation-picker', {
+    res.render('manager/invitations/picker', {
       title: 'Select Guests',
       user,
       ...viewData,

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db';
 import { usersTable } from '../../db/schema/users';
 import { accountsTable } from '../../db/schema/accounts';
@@ -7,6 +7,33 @@ import { userAuthTokensTable } from '../../db/schema/user_auth_tokens';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+
+export async function getPeople(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+
+    const people = await db
+      .select()
+      .from(usersTable)
+      .where(and(eq(usersTable.estateId, user.estateId!), inArray(usersTable.role, ['manager', 'staff'])));
+
+    people.sort((a, b) => {
+      const order: Record<string, number> = { manager: 0, staff: 1 };
+      const roleDiff = (order[a.role] ?? 9) - (order[b.role] ?? 9);
+      return roleDiff !== 0 ? roleDiff : a.lastName.localeCompare(b.lastName);
+    });
+
+    res.render('manager/people', {
+      title: 'People',
+      user,
+      people,
+      breadcrumbs: [{ label: 'People' }],
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
 
 const createUserSchema = z.object({
   firstName: z.string().min(1).max(255),
@@ -54,7 +81,7 @@ export async function postCreateUser(req: Request, res: Response) {
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 48),
     });
 
-    res.redirect('/manager/estate#people');
+    res.redirect(`/manager/people/${newUser.id}`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -281,7 +308,7 @@ export async function postDeleteUser(req: Request, res: Response) {
     // Cascades to accounts and auth tokens
     await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
 
-    res.redirect('/manager/estate#people');
+    res.redirect('/manager/people');
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
