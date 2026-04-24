@@ -1,17 +1,72 @@
-import { relations } from "drizzle-orm";
-import { integer, pgTable, pgEnum, date } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import {
+  check,
+  integer,
+  pgEnum,
+  pgTable,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { eventsTable } from "./events";
 import { usersTable } from "./users";
+import { userAuthTokensTable } from "./user_auth_tokens";
 
-export const statusEnum = pgEnum('status', ['open', 'yes', 'no']);
+export const invitationResponseEnum = pgEnum("invitation_response", [
+  "open",
+  "yes",
+  "no",
+]);
 
-export const invitationsTable = pgTable("invitations", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  eventId: integer("event_id").notNull().references(() => eventsTable.id, { onDelete: "cascade" }),
-  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
-  status: statusEnum().default('open').notNull(),
-  rsvpDate: date("rsvp_date").notNull(),
-});
+export const invitationStatusEnum = pgEnum("invitation_status", [
+  "staged",
+  "sent_email",
+  "sent_manually",
+  "waitlist",
+  "archived",
+]);
+
+export const invitationsTable = pgTable(
+  "invitations",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+
+    publicId: uuid("public_id").notNull(), // add unique below; optionally defaultRandom()
+
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => eventsTable.id, { onDelete: "cascade" }),
+
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+
+    tokenId: integer("token_id")
+      .notNull()
+      .references(() => userAuthTokensTable.id, { onDelete: "cascade" }),
+
+    response: invitationResponseEnum().notNull().default("open"),
+    respondBy: timestamp("respond_by").notNull(),
+    respondedAt: timestamp("responded_at"),
+    openedAt: timestamp("opened_at"),
+
+    status: invitationStatusEnum().notNull().default("staged"),
+  },
+  (t) => ({
+    uniqPublicId: unique("uniq_invitations_public_id").on(t.publicId),
+    uniqEventUser: unique("uniq_invitations_event_user").on(t.eventId, t.userId),
+    uniqToken: unique("uniq_invitations_token_id").on(t.tokenId),
+
+    respondedAtRequiredIfClosed: check(
+      "responded_at_required_if_response_not_open",
+      sql`${t.response} = 'open' OR ${t.respondedAt} IS NOT NULL`
+    ),
+    respondedAtMustBeNullIfOpen: check(
+      "responded_at_must_be_null_if_open",
+      sql`${t.response} != 'open' OR ${t.respondedAt} IS NULL`
+    ),
+  })
+);
 
 export const invitationsRelations = relations(invitationsTable, ({ one }) => ({
   event: one(eventsTable, {
@@ -21,5 +76,9 @@ export const invitationsRelations = relations(invitationsTable, ({ one }) => ({
   user: one(usersTable, {
     fields: [invitationsTable.userId],
     references: [usersTable.id],
+  }),
+  token: one(userAuthTokensTable, {
+    fields: [invitationsTable.tokenId],
+    references: [userAuthTokensTable.id],
   }),
 }));

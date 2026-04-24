@@ -3,7 +3,7 @@ import ejs from 'ejs';
 import path from 'path';
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.eu.mailgun.org',
+  host: process.env.MAILGUN_SMTP_HOST || 'smtp.mailgun.org',
   port: 587,
   secure: false,
   auth: {

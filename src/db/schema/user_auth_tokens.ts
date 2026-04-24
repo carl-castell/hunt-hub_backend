@@ -2,7 +2,7 @@ import { pgTable, integer, varchar, timestamp, pgEnum } from 'drizzle-orm/pg-cor
 import { relations } from 'drizzle-orm';
 import { usersTable } from './users';
 
-export const tokenTypeEnum = pgEnum('token_type', ['activation', 'password_reset']);
+export const tokenTypeEnum = pgEnum('token_type', ['activation', 'password_reset', 'invitation']);
 
 export const userAuthTokensTable = pgTable('user_auth_tokens', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
