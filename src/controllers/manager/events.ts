@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { eq, gte, lt } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { eventsTable } from '../../db/schema/events';
+import { drivesTable } from '../../db/schema/drives';
 import { z } from 'zod';
 
 const eventSchema = z.object({
@@ -48,7 +49,12 @@ export async function getEvent(req: Request, res: Response) {
 
     if (!event || event.estateId !== user.estateId) return res.status(404).send('Event not found');
 
-    res.render('manager/event', { title: 'Events', user, event });
+    const drives = await db
+      .select()
+      .from(drivesTable)
+      .where(eq(drivesTable.eventId, Number(id)));
+
+    res.render('manager/event', { title: event.eventName, user, event, drives });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

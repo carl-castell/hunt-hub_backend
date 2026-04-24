@@ -1,7 +1,8 @@
 CREATE TYPE "public"."role" AS ENUM('admin', 'manager', 'staff', 'guest');--> statement-breakpoint
-CREATE TYPE "public"."status" AS ENUM('open', 'yes', 'no');--> statement-breakpoint
+CREATE TYPE "public"."invitation_response" AS ENUM('open', 'yes', 'no');--> statement-breakpoint
+CREATE TYPE "public"."invitation_status" AS ENUM('staged', 'sent_email', 'sent_manually', 'waitlist', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."attachment_kind" AS ENUM('photo', 'document');--> statement-breakpoint
-CREATE TYPE "public"."token_type" AS ENUM('activation', 'password_reset');--> statement-breakpoint
+CREATE TYPE "public"."token_type" AS ENUM('activation', 'password_reset', 'invitation');--> statement-breakpoint
 CREATE TABLE "users" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "users_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"first_name" varchar(255) NOT NULL,
@@ -32,6 +33,7 @@ CREATE TABLE "contacts" (
 CREATE TABLE "drives" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "drives_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"event_id" integer NOT NULL,
+	"name" varchar(255) NOT NULL,
 	"start_time" time NOT NULL,
 	"end_time" time NOT NULL
 );
@@ -51,10 +53,20 @@ CREATE TABLE "events" (
 --> statement-breakpoint
 CREATE TABLE "invitations" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "invitations_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"public_id" uuid NOT NULL,
 	"event_id" integer NOT NULL,
 	"user_id" integer NOT NULL,
-	"status" "status" DEFAULT 'open' NOT NULL,
-	"rsvp_date" date NOT NULL
+	"token_id" integer NOT NULL,
+	"response" "invitation_response" DEFAULT 'open' NOT NULL,
+	"respond_by" timestamp NOT NULL,
+	"responded_at" timestamp,
+	"opened_at" timestamp,
+	"status" "invitation_status" DEFAULT 'staged' NOT NULL,
+	CONSTRAINT "uniq_invitations_public_id" UNIQUE("public_id"),
+	CONSTRAINT "uniq_invitations_event_user" UNIQUE("event_id","user_id"),
+	CONSTRAINT "uniq_invitations_token_id" UNIQUE("token_id"),
+	CONSTRAINT "responded_at_required_if_response_not_open" CHECK ("invitations"."response" = 'open' OR "invitations"."responded_at" IS NOT NULL),
+	CONSTRAINT "responded_at_must_be_null_if_open" CHECK ("invitations"."response" != 'open' OR "invitations"."responded_at" IS NULL)
 );
 --> statement-breakpoint
 CREATE TABLE "hunting_license_attachments" (
@@ -109,7 +121,8 @@ CREATE TABLE "stands" (
 CREATE TABLE "areas" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "areas_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"estate_id" integer NOT NULL,
-	"name" varchar(255) NOT NULL
+	"name" varchar(255) NOT NULL,
+	"geofile" geometry(GeometryCollection, 4326)
 );
 --> statement-breakpoint
 CREATE TABLE "user_auth_tokens" (
@@ -172,6 +185,7 @@ ALTER TABLE "drives" ADD CONSTRAINT "drives_event_id_events_id_fk" FOREIGN KEY (
 ALTER TABLE "events" ADD CONSTRAINT "events_estate_id_estates_id_fk" FOREIGN KEY ("estate_id") REFERENCES "public"."estates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitations" ADD CONSTRAINT "invitations_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitations" ADD CONSTRAINT "invitations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_token_id_user_auth_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."user_auth_tokens"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "hunting_license_attachments" ADD CONSTRAINT "hunting_license_attachments_license_id_hunting_licenses_id_fk" FOREIGN KEY ("license_id") REFERENCES "public"."hunting_licenses"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "hunting_licenses" ADD CONSTRAINT "hunting_licenses_estate_id_estates_id_fk" FOREIGN KEY ("estate_id") REFERENCES "public"."estates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "hunting_licenses" ADD CONSTRAINT "hunting_licenses_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

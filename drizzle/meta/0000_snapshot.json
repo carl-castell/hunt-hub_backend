@@ -1,5 +1,5 @@
 {
-  "id": "7d307f85-d372-44f0-a7f3-822db029c0c5",
+  "id": "a64bba3d-3979-40ee-aa14-b34e1b0c3796",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -234,6 +234,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "start_time": {
           "name": "start_time",
           "type": "time",
@@ -394,6 +400,12 @@
             "cycle": false
           }
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "event_id": {
           "name": "event_id",
           "type": "integer",
@@ -406,19 +418,45 @@
           "primaryKey": false,
           "notNull": true
         },
-        "status": {
-          "name": "status",
-          "type": "status",
+        "token_id": {
+          "name": "token_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "response": {
+          "name": "response",
+          "type": "invitation_response",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
           "default": "'open'"
         },
-        "rsvp_date": {
-          "name": "rsvp_date",
-          "type": "date",
+        "respond_by": {
+          "name": "respond_by",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true
+        },
+        "responded_at": {
+          "name": "responded_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "opened_at": {
+          "name": "opened_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "invitation_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'staged'"
         }
       },
       "indexes": {},
@@ -448,12 +486,57 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "invitations_token_id_user_auth_tokens_id_fk": {
+          "name": "invitations_token_id_user_auth_tokens_id_fk",
+          "tableFrom": "invitations",
+          "tableTo": "user_auth_tokens",
+          "columnsFrom": [
+            "token_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "uniq_invitations_public_id": {
+          "name": "uniq_invitations_public_id",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_id"
+          ]
+        },
+        "uniq_invitations_event_user": {
+          "name": "uniq_invitations_event_user",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "user_id"
+          ]
+        },
+        "uniq_invitations_token_id": {
+          "name": "uniq_invitations_token_id",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token_id"
+          ]
+        }
+      },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "responded_at_required_if_response_not_open": {
+          "name": "responded_at_required_if_response_not_open",
+          "value": "\"invitations\".\"response\" = 'open' OR \"invitations\".\"responded_at\" IS NOT NULL"
+        },
+        "responded_at_must_be_null_if_open": {
+          "name": "responded_at_must_be_null_if_open",
+          "value": "\"invitations\".\"response\" != 'open' OR \"invitations\".\"responded_at\" IS NULL"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.hunting_license_attachments": {
@@ -1112,6 +1195,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
+        },
+        "geofile": {
+          "name": "geofile",
+          "type": "geometry(GeometryCollection, 4326)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -1688,13 +1777,24 @@
         "guest"
       ]
     },
-    "public.status": {
-      "name": "status",
+    "public.invitation_response": {
+      "name": "invitation_response",
       "schema": "public",
       "values": [
         "open",
         "yes",
         "no"
+      ]
+    },
+    "public.invitation_status": {
+      "name": "invitation_status",
+      "schema": "public",
+      "values": [
+        "staged",
+        "sent_email",
+        "sent_manually",
+        "waitlist",
+        "archived"
       ]
     },
     "public.attachment_kind": {
@@ -1710,7 +1810,8 @@
       "schema": "public",
       "values": [
         "activation",
-        "password_reset"
+        "password_reset",
+        "invitation"
       ]
     }
   },

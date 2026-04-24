@@ -1,0 +1,68 @@
+import { Request, Response } from 'express';
+import { and, eq } from 'drizzle-orm';
+import { db } from '../../db';
+import { drivesTable } from '../../db/schema/drives';
+import { eventsTable } from '../../db/schema/events';
+import { z } from 'zod';
+
+const driveSchema = z.object({
+  name:      z.string().min(1).max(255),
+  startTime: z.string().min(1),
+  endTime:   z.string().min(1),
+});
+
+async function resolveEvent(eventId: number, estateId: number) {
+  const [event] = await db
+    .select()
+    .from(eventsTable)
+    .where(eq(eventsTable.id, eventId))
+    .limit(1);
+  return event?.estateId === estateId ? event : null;
+}
+
+export async function postCreateDrive(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const eventId = Number(req.params.eventId);
+
+    const event = await resolveEvent(eventId, user.estateId!);
+    if (!event) return res.status(404).send('Event not found');
+
+    const result = driveSchema.safeParse(req.body);
+    if (!result.success) return res.status(400).send(result.error.issues[0].message);
+
+    const [drive] = await db
+      .insert(drivesTable)
+      .values({ eventId, ...result.data })
+      .returning();
+
+    res.redirect(`/manager/events/${eventId}/drives/${drive.id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function getDrive(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const eventId = Number(req.params.eventId);
+    const driveId = Number(req.params.id);
+
+    const event = await resolveEvent(eventId, user.estateId!);
+    if (!event) return res.status(404).send('Event not found');
+
+    const [drive] = await db
+      .select()
+      .from(drivesTable)
+      .where(and(eq(drivesTable.id, driveId), eq(drivesTable.eventId, eventId)))
+      .limit(1);
+
+    if (!drive) return res.status(404).send('Drive not found');
+
+    res.render('manager/drive', { title: drive.name, user, event, drive });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}

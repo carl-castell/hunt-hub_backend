@@ -4,6 +4,7 @@ import { getEstate, postRenameEstate } from '../controllers/manager/estate';
 import { getArea, postCreateArea, postRenameArea, postDeleteArea, postUploadGeofile, postDeleteGeofile } from '../controllers/manager/areas';
 import { getGuests, getNewGuest, postCreateGuest, getGuest, postUpdateGuest, postDeleteGuest } from '../controllers/manager/guests';
 import { getEvents, getEvent, postCreateEvent, postUpdateEvent, postDeleteEvent } from '../controllers/manager/events';
+import { postCreateDrive, getDrive } from '../controllers/manager/drives';
 import {
   getPeople, postCreateUser,
   getUser, postUpdateUserRole, postDeleteUser, postDeactivateUser, postResendActivation, postReactivateUser,
@@ -69,6 +70,10 @@ managerRouter.get('/events/:id',                      getEvent);
 managerRouter.post('/events',                         postCreateEvent);
 managerRouter.post('/events/:id/update',              postUpdateEvent);
 managerRouter.post('/events/:id/delete',              postDeleteEvent);
+
+// Drives
+managerRouter.post('/events/:eventId/drives',         postCreateDrive);
+managerRouter.get('/events/:eventId/drives/:id',      getDrive);
 
 // People
 managerRouter.get('/people',                          getPeople);

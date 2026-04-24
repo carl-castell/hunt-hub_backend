@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1776855399978,
-      "tag": "0000_sharp_molecule_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776871695046,
-      "tag": "0001_clumsy_red_hulk",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1776874205534,
-      "tag": "0002_hesitant_microchip",
+      "when": 1777046636179,
+      "tag": "0000_even_toro",
       "breakpoints": true
     }
   ]

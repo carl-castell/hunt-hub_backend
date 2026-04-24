@@ -1,28 +1,47 @@
-<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-  <h2 style="margin: 0;"><%= event.eventName %></h2>
-  <button class="outline" data-dialog="edit-event-dialog">Edit</button>
-  <button class="secondary outline" data-dialog="delete-event-dialog">Delete</button>
+<style>
+  .event-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2rem; }
+  .event-meta { margin-top: 0.25rem; font-size: 0.9rem; color: var(--pico-muted-color); }
+  .drive-row { display: block; padding: 0.65rem 0; border-bottom: 1px solid var(--pico-muted-border-color);
+               text-decoration: none; color: inherit; }
+  .drive-row:last-child { border-bottom: none; }
+  .drive-row:hover { opacity: 0.75; }
+</style>
+
+<div class="event-header">
+  <div>
+    <h2 style="margin: 0;"><%= event.eventName %></h2>
+    <p class="event-meta">
+      <%= new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+      &nbsp;·&nbsp;<%= event.time %>
+    </p>
+  </div>
+  <details class="dropdown" style="margin: 0;">
+    <summary role="button" class="outline" style="padding: 0.4rem 0.8rem;">⚙</summary>
+    <ul dir="rtl">
+      <li><a href="#" data-dialog="edit-event-dialog">Edit</a></li>
+      <li><a href="#" style="color: var(--pico-del-color);" data-dialog="delete-event-dialog">Delete</a></li>
+    </ul>
+  </details>
 </div>
 
-<a href="/manager/events" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Back to Events</a>
-
-<!-- ── Event Info ─────────────────────────────────────────────────────────── -->
+<!-- Drives -->
 <article>
-  <dl>
-    <dt>Event Name</dt>
-    <dd><%= event.eventName %></dd>
-
-    <dt>Date</dt>
-    <dd>
-      <%= new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) %>
-    </dd>
-
-    <dt>Time</dt>
-    <dd><%= event.time %></dd>
-  </dl>
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+    <h3 style="margin: 0;">Drives</h3>
+    <button data-dialog="create-drive-dialog">+ New Drive</button>
+  </div>
+  <% if (drives.length === 0) { %>
+    <p style="margin: 0; color: var(--pico-muted-color);">No drives yet.</p>
+  <% } else { %>
+    <% drives.forEach(drive => { %>
+      <a class="drive-row" href="/manager/events/<%= event.id %>/drives/<%= drive.id %>">
+        <%= drive.name %>
+      </a>
+    <% }) %>
+  <% } %>
 </article>
 
-<!-- ── Edit Event Dialog ──────────────────────────────────────────────────── -->
+<!-- Edit Event Dialog -->
 <dialog id="edit-event-dialog">
   <article>
     <header>
@@ -51,23 +70,48 @@
   </article>
 </dialog>
 
-<!-- ── Delete Event Dialog ────────────────────────────────────────────────── -->
+<!-- Delete Event Dialog -->
 <dialog id="delete-event-dialog">
   <article>
     <header>
       <button aria-label="Close" rel="prev" data-close-dialog="delete-event-dialog"></button>
       <h3>Delete Event</h3>
     </header>
-    <p>
-      Are you sure you want to permanently delete
-      <strong><%= event.eventName %></strong>?
-      This cannot be undone.
-    </p>
+    <p>Are you sure you want to permanently delete <strong><%= event.eventName %></strong>? This cannot be undone.</p>
     <form action="/manager/events/<%= event.id %>/delete" method="POST">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <footer>
         <button type="button" class="outline" data-close-dialog="delete-event-dialog">Cancel</button>
         <button type="submit" class="contrast">Delete</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- Create Drive Dialog -->
+<dialog id="create-drive-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="create-drive-dialog"></button>
+      <h3>New Drive</h3>
+    </header>
+    <form action="/manager/events/<%= event.id %>/drives" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>
+        Name
+        <input type="text" name="name" placeholder="e.g. Morning Drive" required maxlength="255" />
+      </label>
+      <label>
+        Start Time
+        <input type="time" name="startTime" required />
+      </label>
+      <label>
+        End Time
+        <input type="time" name="endTime" required />
+      </label>
+      <footer>
+        <button type="button" class="outline" data-close-dialog="create-drive-dialog">Cancel</button>
+        <button type="submit">Create</button>
       </footer>
     </form>
   </article>
