@@ -1,287 +1,333 @@
 # Hunt Hub — Backend
 
-A hunting estate event management platform built with **Node.js**, **TypeScript**, **Express**, and **Drizzle ORM** with a **PostgreSQL** database (local via Docker or cloud via Neon).
+Hunting estate management platform. Managers organise events, build guest lists, assign hunting groups to drives and stands, send email invitations with magic-link RSVPs, and track guest documents (hunting licences and training certificates). A separate admin surface manages estates and staff accounts.
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Runtime | Node.js |
-| Language | TypeScript |
+| Runtime | Node.js 18+ with TypeScript |
 | Framework | Express.js |
+| Database | PostgreSQL 16 + PostGIS (Docker locally, Neon in production) |
 | ORM | Drizzle ORM |
-| Database | PostgreSQL (Docker locally, Neon in production) |
-| Templating | EJS |
-| Auth | Session-based (connect-pg-simple) |
-| Email | Nodemailer + Mailgun (EU) |
-| Security | Helmet, bcrypt, rate limiting |
+| Templating | EJS with express-ejs-layouts |
+| Auth | Session-based (express-session + connect-pg-simple) |
+| Storage | AWS S3-compatible — MinIO locally, Cloudflare R2 in production |
+| Email | Nodemailer — Mailgun SMTP in production, Mailpit locally |
 | Validation | Zod |
+| Security | Helmet, bcrypt, CSRF tokens, express-rate-limit |
+| Testing | Vitest + Supertest |
 
 ---
 
-## 📋 Prerequisites
+## User Surfaces
 
-- **Node.js** v18 or higher
-- **npm**
-- **Docker** (for local database)
-- **Git**
+| Surface | URL prefix | Who uses it |
+|---|---|---|
+| Public RSVP | `/rsvp/:publicId` | Guests (no login required) |
+| Manager dashboard | `/manager` | Managers and staff |
+| Admin dashboard | `/admin` | Admins |
 
 ---
 
-## 🚀 Getting Started
+## Prerequisites
 
-### 1. Clone the repository
+- Node.js 18+
+- Docker and Docker Compose (for local Postgres and MinIO)
+- A Mailgun account for production email, or Mailpit for local development
+
+---
+
+## Quick Start
 
 ```bash
-git clone https://github.com/carl-castell/hunt-hub_backend.git
+# 1. Clone and install
+git clone <repo-url>
 cd hunt-hub_backend
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
-```
 
-### 3. Configure environment variables
-
-```bash
+# 2. Configure environment
 cp .env.example .env
-```
+# edit .env — see Environment Variables below
 
-Fill in the values in `.env` — see the [Environment Variables](#-environment-variables) section below.
-
-### 4. Start the local database
-
-```bash
+# 3. Start Docker services (Postgres + MinIO)
 docker compose up -d
-```
 
-### 5. Push the schema to the database
-
-```bash
+# 4. Apply the database schema
 npm run db:push
-```
 
-### 6. Seed the database
-
-```bash
+# 5. Seed the database (creates admin account + optional mock data)
 npm run db:seed
-```
 
-> ⚠️ You will be prompted to confirm before any data is deleted.
-
-### 7. Start the development server
-
-```bash
+# 6. Start the development server
 npm run dev
+# → http://localhost:3000
 ```
 
-The server will be available at `http://localhost:3000`.
+---
+
+## Environment Variables
+
+### Application
+
+| Variable | Required | Description | Example |
+|---|---|---|---|
+| `NODE_ENV` | Yes | Runtime environment | `development` |
+| `PORT` | No | HTTP port (default: 3000) | `3000` |
+| `SESSION_SECRET` | Yes | Random string for session signing | `change-me-32-chars-min` |
+| `DOMAIN` | Yes | Base URL used in activation email links | `http://localhost:3000` |
+| `APP_URL` | Yes | Base URL used in RSVP email links | `http://localhost:3000` |
+
+### Database
+
+| Variable | Required | Description | Example |
+|---|---|---|---|
+| `DB_PROVIDER` | Yes | `local` for Docker, `neon` for Neon | `local` |
+| `LOCAL_DATABASE_URL` | If local | Local Postgres connection string | `postgresql://app:app@localhost:5433/appdb` |
+| `NEON_DATABASE_URL` | If neon | Neon serverless connection string | `postgresql://...` |
+
+### Email (SMTP)
+
+| Variable | Required | Description | Example |
+|---|---|---|---|
+| `MAILGUN_SMTP_HOST` | No | SMTP host (default: `smtp.mailgun.org`) | `smtp.mailgun.org` |
+| `SMTP_PORT` | No | SMTP port (default: `587`) | `587` |
+| `MAILGUN_SMTP_USER` | Yes | SMTP username | `postmaster@mg.example.com` |
+| `MAILGUN_SMTP_PASSWORD` | Yes | SMTP password | `key-...` |
+| `MAIL_FROM` | Yes | Sender address | `noreply@example.com` |
+
+For local development without Mailgun, point these at a [Mailpit](https://github.com/axllent/mailpit) instance (`MAILGUN_SMTP_HOST=localhost`, `SMTP_PORT=1025`) — Mailpit requires no credentials.
+
+### File Storage
+
+| Variable | Required | Description | Example |
+|---|---|---|---|
+| `STORAGE_PROVIDER` | Yes | `minio` or `r2` | `minio` |
+| `MINIO_ENDPOINT` | If minio | MinIO server URL | `http://localhost:9000` |
+| `MINIO_ACCESS_KEY` | If minio | MinIO access key | `minioadmin` |
+| `MINIO_SECRET_KEY` | If minio | MinIO secret key | `minioadmin` |
+| `MINIO_BUCKET` | If minio | Bucket name | `hunt-hub` |
+| `MINIO_REGION` | No | MinIO region (default: `eu-west-1`) | `eu-west-1` |
+| `R2_ACCOUNT_ID` | If r2 | Cloudflare account ID | `abc123` |
+| `R2_ACCESS_KEY` | If r2 | R2 access key | `...` |
+| `R2_SECRET_KEY` | If r2 | R2 secret key | `...` |
+| `R2_BUCKET` | If r2 | R2 bucket name | `hunt-hub` |
+
+### Database Seeding
+
+| Variable | Required | Description | Example |
+|---|---|---|---|
+| `ADMIN_FIRST_NAME` | Yes | Admin account first name | `Admin` |
+| `ADMIN_LAST_NAME` | Yes | Admin account last name | `User` |
+| `ADMIN_EMAIL` | Yes | Admin login email | `admin@example.com` |
+| `ADMIN_PASSWORD` | Yes | Admin login password | `changeme` |
+| `SEED_MOCK_DATA` | No | Seed fake estates/events/guests | `true` |
 
 ---
 
-## 🌍 Environment Variables
+## Scripts
 
-Copy `.env.example` to `.env` and fill in the values.
-
-| Variable | Description |
-|---|---|
-| `DB_PROVIDER` | `local` for Docker, `neon` for Neon cloud |
-| `LOCAL_DATABASE_URL` | PostgreSQL connection string for local Docker |
-| `NEON_DATABASE_URL` | PostgreSQL connection string for Neon |
-| `NODE_ENV` | `development` or `production` |
-| `SESSION_SECRET` | Strong random string for session encryption |
-| `DOMAIN` | Base URL of the app (used for activation links) |
-| `MAILGUN_SMTP_USER` | Mailgun SMTP username |
-| `MAILGUN_SMTP_PASSWORD` | Mailgun SMTP password |
-| `MAIL_FROM` | From address for outgoing emails |
-| `ADMIN_FIRST_NAME` | Admin user first name (used by seeder) |
-| `ADMIN_LAST_NAME` | Admin user last name (used by seeder) |
-| `ADMIN_EMAIL` | Admin user email (used by seeder) |
-| `ADMIN_PASSWORD` | Admin user password (used by seeder) |
-| `SEED_MOCK_DATA` | `true` to seed mock data, `false` to skip |
-
----
-
-## 🧑‍💻 Scripts
+### Development
 
 | Script | Description |
 |---|---|
-| `npm run dev` | Start development server with hot reload |
+| `npm run dev` | Start dev server with hot reload (tsx + nodemon) |
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm start` | Run compiled production build |
-| `npm run db:push` | Push schema to local database |
-| `npm run db:push:neon` | Push schema to Neon database |
-| `npm run db:gen` | Generate a new migration from schema changes |
-| `npm run db:seed` | Seed the database (with confirmation prompt) |
-| `npm run db:clear` | Clear all data from the database |
-| `npm run db:reset` | Full reset: restart Docker, push schema, seed |
+
+### Database
+
+| Script | Description |
+|---|---|
+| `npm run db:push` | Apply schema to local database |
+| `npm run db:push:neon` | Apply schema to Neon database |
+| `npm run db:gen` | Generate a new migration file from schema changes |
+| `npm run db:seed` | Seed admin account and optional mock data (prompts for confirmation) |
+| `npm run db:reset` | Full local reset: restart Docker volumes, push schema, seed |
+| `npm run db:reset:test` | Reset the test database (port 5434) |
 | `npm run studio` | Open Drizzle Studio (database GUI) |
+
+### Testing
+
+| Script | Description |
+|---|---|
+| `npm run test:unit` | Run unit tests |
+| `npm run test:integration` | Run integration tests against test database |
+| `npm run test:all` | Run all tests |
+| `npm run test:coverage` | Run all tests with v8 coverage report |
 
 ---
 
-## 🗄️ Database
+## Database
 
-### Dual database support
+### Dual-database support
 
-| Environment | Driver | Variable |
-|---|---|---|
-| Local (Docker) | `pg` | `LOCAL_DATABASE_URL` |
-| Production (Neon) | `@neondatabase/serverless` | `NEON_DATABASE_URL` |
+The app supports two drivers, switched via `DB_PROVIDER`:
 
-Switch between them by setting `DB_PROVIDER=local` or `DB_PROVIDER=neon` in `.env`.
+| Mode | Driver | Variable | Use for |
+|---|---|---|---|
+| `local` | `pg` | `LOCAL_DATABASE_URL` | Local development |
+| `neon` | `@neondatabase/serverless` | `NEON_DATABASE_URL` | Production / staging |
 
-### ERD
+### Schema overview
 
-```mermaid
-erDiagram
-    ESTATES {
-        int id PK
-        varchar name
-    }
-    USERS {
-        int id PK
-        int estate_id FK
-        varchar first_name
-        varchar last_name
-        varchar email
-        varchar password
-        enum role
-        boolean active
-    }
-    GUESTS {
-        int id PK
-        int estate_id FK
-        varchar first_name
-        varchar last_name
-        varchar email
-        varchar phone
-    }
-    EVENTS {
-        int id PK
-        int estate_id FK
-        varchar event_name
-        date date
-        time time
-    }
-    DRIVES {
-        int id PK
-        int event_id FK
-        time start_time
-        time end_time
-    }
-    GROUPS {
-        int id PK
-        int drive_id FK
-        int leader_id FK
-        varchar group_name
-    }
-    AREAS {
-        int id PK
-        int estate_id FK
-        varchar area_name
-    }
-    STANDS {
-        int id PK
-        int area_id FK
-        varchar number
-        point location
-    }
-    INVITATIONS {
-        int id PK
-        int event_id FK
-        int guest_id FK
-        enum status
-        date rsvp_date
-    }
-    LICENSES {
-        int id PK
-        int guest_id FK
-        boolean checked
-        date expiry_date
-        timestamp upload_date
-    }
-    TRAINING_CERTIFICATES {
-        int id PK
-        int guest_id FK
-        boolean checked
-        date issue_date
-        timestamp upload_date
-    }
-    STANDS_DRIVE {
-        int id PK
-        int stand_id FK
-        int drive_id FK
-    }
-    STANDS_GROUP {
-        int id PK
-        int stand_id FK
-        int group_id FK
-    }
-    STANDS_GUEST {
-        int id PK
-        int stand_id FK
-        int guest_id FK
-    }
-    USER_AUTH_TOKENS {
-        int id PK
-        int user_id FK
-        varchar token
-        enum type
-        timestamp expires_at
-    }
-    AUDIT_LOGS {
-        int id PK
-        int user_id FK
-        varchar event
-        varchar ip
-        json metadata
-        timestamp created_at
-    }
+The schema is defined in `src/db/schema/` using Drizzle. Key tables:
 
-    ESTATES ||--o{ USERS : "has"
-    ESTATES ||--o{ GUESTS : "has"
-    ESTATES ||--o{ EVENTS : "has"
-    ESTATES ||--o{ AREAS : "has"
-    AREAS ||--o{ STANDS : "has"
-    EVENTS ||--o{ INVITATIONS : "has"
-    EVENTS ||--o{ DRIVES : "has"
-    DRIVES ||--o{ GROUPS : "has"
-    DRIVES ||--o{ STANDS_DRIVE : "has"
-    GROUPS ||--o{ STANDS_GROUP : "has"
-    USERS ||--o{ GROUPS : "leads"
-    USERS ||--o{ USER_AUTH_TOKENS : "has"
-    USERS ||--o{ AUDIT_LOGS : "performs"
-    GUESTS ||--o{ INVITATIONS : "receives"
-    GUESTS ||--o{ LICENSES : "has"
-    GUESTS ||--o{ TRAINING_CERTIFICATES : "has"
-    GUESTS ||--o{ STANDS_GUEST : "assigned to"
-    STANDS ||--o{ STANDS_DRIVE : "used in"
-    STANDS ||--o{ STANDS_GROUP : "used in"
-    STANDS ||--o{ STANDS_GUEST : "used in"
+| Table | Description |
+|---|---|
+| `estates` | Hunting estates — top-level tenant |
+| `users` | Staff accounts (admin / manager / staff) |
+| `accounts` | Login credentials (email + bcrypt password) |
+| `contacts` | Extended guest info: email, phone, date of birth, rating |
+| `events` | Hunting events (name, date, time) scoped to an estate |
+| `drives` | Individual drives within an event (start/end time) |
+| `drive_groups` | Groups of guests assigned to a drive |
+| `drive_stand_assignments` | Stands used within a drive |
+| `areas` | Geographic areas of the estate (PostGIS geometry) |
+| `stands` | Individual hunting positions within an area |
+| `invitations` | Guest invitations — status, RSVP response, magic link token |
+| `guest_groups` | Reusable named groups of guests |
+| `guest_group_members` | Members of a guest group |
+| `hunting_licenses` | Guest hunting licence records + checked/expiry |
+| `hunting_license_attachments` | Files attached to a licence (photo or document) |
+| `training_certificates` | Guest training certificate records + checked/issue date |
+| `training_certificate_attachments` | Files attached to a certificate |
+| `user_auth_tokens` | Activation and password reset tokens (with expiry) |
+| `audit_logs` | Immutable event log (login, logout, invitations, etc.) |
+
+PostGIS is required for geospatial area data. The Docker Compose file uses the `postgis/postgis:16-3.4` image.
+
+---
+
+## Testing
+
+Unit and integration tests use **Vitest**. Integration tests run against a separate test database on port **5434** (defined in `docker-compose.yml` as the `db_test` service). A global setup file runs Drizzle migrations against the test database before any tests execute, so the schema is always in sync.
+
+```bash
+# Ensure the test database container is running
+docker compose up -d db_test
+
+# Run integration tests
+npm run test:integration
+```
+
+Test files live in `src/tests/`:
+
+```
+src/tests/
+├── global-setup.integration.ts   # Runs migrations before integration suite
+├── setup.integration.ts          # Per-test DB cleanup and seeding
+├── unit/
+│   ├── schemas.test.ts
+│   └── middleware.test.ts
+└── integration/
+    ├── auth.test.ts
+    ├── activate.test.ts
+    ├── users.test.ts
+    └── manager/
+        ├── estates.test.ts
+        ├── people.test.ts
+        ├── guests.test.ts
+        ├── events.test.ts
+        ├── areas.test.ts
+        └── licenses.test.ts
 ```
 
 ---
 
-## 🔐 Roles
+## Project Structure
 
-| Role | Access |
-|---|---|
-| `admin` | Full access — manages estates and users |
-| `manager` | Estate-scoped access |
-| `staff` | Limited estate-scoped access |
+```
+src/
+├── index.ts                    # Entry point — binds Express app to port
+├── app.ts                      # Middleware stack + route mounting
+├── audit.ts                    # Audit log helper
+├── mail.ts                     # Nodemailer transport setup
+│
+├── db/
+│   ├── index.ts                # Database client (pg or neon)
+│   ├── seed.ts                 # Database seeder
+│   ├── enable-extensions.ts    # Enables PostGIS on first run
+│   └── schema/                 # Drizzle table definitions (one file per table)
+│
+├── middlewares/
+│   ├── csrf.ts                 # CSRF token generation and verification
+│   ├── requireRole.ts          # Auth guards (requireAdmin, requireManager, requireAuth)
+│   ├── rateLimiter.ts          # General + auth-specific rate limits
+│   └── logger.ts               # Request logger
+│
+├── routes/
+│   ├── home.ts
+│   ├── auth.ts                 # Login / logout
+│   ├── activate.ts             # Account activation via token
+│   ├── rsvp.ts                 # Public RSVP flow (no auth)
+│   ├── admin.ts
+│   ├── manager.ts
+│   ├── users.ts
+│   └── map.ts
+│
+├── controllers/
+│   ├── admin/
+│   │   ├── dashboard.ts
+│   │   └── estates.ts
+│   ├── manager/
+│   │   ├── dashboard.ts
+│   │   ├── estate.ts
+│   │   ├── events.ts
+│   │   ├── invitations.ts      # Staging, sending, RSVP list
+│   │   ├── drives.ts
+│   │   ├── guests.ts
+│   │   ├── guest_groups.ts
+│   │   ├── people.ts           # Staff user management
+│   │   ├── areas.ts            # GIS area management
+│   │   └── account.ts
+│   ├── rsvp.ts                 # Public RSVP + document upload
+│   ├── licenses.ts             # Hunting licence + certificate management
+│   ├── files.ts                # Serve uploaded files (estate-scoped)
+│   └── users/
+│       ├── activate.ts
+│       ├── create.ts
+│       └── users.ts
+│
+├── services/
+│   └── storage.ts              # S3-compatible upload/delete (MinIO or R2)
+│
+├── schemas/                    # Shared Zod schemas
+├── mail-views/                 # EJS email templates
+└── tests/
+
+views/                          # EJS page templates
+├── layout.ejs                  # Root layout
+├── admin/
+├── manager/
+└── rsvp/                       # Public RSVP pages (own layout, no sidebar)
+
+drizzle/                        # Migration SQL files (generated by drizzle-kit)
+public/                         # Static assets
+```
 
 ---
 
-## ❓ Troubleshooting
+## Roles & Access
 
-| Problem | Solution |
-|---|---|
-| Can't connect to database | Make sure Docker is running: `docker compose up -d` |
-| Session not persisting | Check `NODE_ENV` — use `development` locally |
-| Email not sending | Check `MAILGUN_SMTP_USER` and `MAILGUN_SMTP_PASSWORD` in `.env` |
-| Port already in use | Run `lsof -i :3000` and kill the process |
-| Schema out of sync | Run `npm run db:push` |
+| Role | How created | Access |
+|---|---|---|
+| `admin` | Seeded via `npm run db:seed` or created by another admin | Full access — create/delete estates, manage any user |
+| `manager` | Created by admin via `/admin` dashboard | Estate-scoped — full control over their estate's events, guests, documents, and staff |
+| `staff` | Created by manager via `/manager/people` | Estate-scoped — limited operational access |
+| Guest | Added to guest list by manager | No account — accesses RSVP page via magic link in invitation email |
+
+---
+
+## Production Deployment
+
+1. Set `DB_PROVIDER=neon` and provide `NEON_DATABASE_URL`.
+2. Set `STORAGE_PROVIDER=r2` and provide R2 credentials.
+3. Configure Mailgun SMTP credentials.
+4. Set `NODE_ENV=production` — this enables secure cookies (requires HTTPS) and activates rate limiting.
+5. Run `npm run db:push:neon` to apply the schema to the production database.
+6. Build and start: `npm run build && npm start`.
+
+> Secure cookies require the app to be served over HTTPS. Set `trust proxy` accordingly if deployed behind a reverse proxy (already configured in `app.ts`).
