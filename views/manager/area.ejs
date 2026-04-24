@@ -33,6 +33,7 @@
     <header><strong>No geo file uploaded</strong></header>
     <p>Upload a geo file to display this area on a map.</p>
     <form action="/manager/areas/<%= area.id %>/geofile" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <input type="file" name="geofile" accept=".geojson,.json,.kml,.gpx,.zip,.gpkg" required />
       <small>Supported formats: .geojson, .kml, .gpx, .gpkg, .zip (zipped shapefile)</small>
       <button type="submit" style="margin-top: 0.75rem;">Upload Geo File</button>
@@ -49,6 +50,7 @@
       <h3>Rename Area</h3>
     </header>
     <form action="/manager/areas/<%= area.id %>/rename" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>
         Area Name
         <input type="text" name="name" value="<%= area.name %>" required maxlength="255" />
@@ -70,6 +72,7 @@
     <p>⚠️ Deleting <strong><%= area.name %></strong> will also permanently delete all stands within this area. This cannot be undone.</p>
     <p>To confirm, type the area name below:</p>
     <form action="/manager/areas/<%= area.id %>/delete" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>
         <input type="text" name="confirm" placeholder="<%= area.name %>" required autocomplete="off" />
       </label>
@@ -91,6 +94,7 @@
     <p>Are you sure you want to remove the geo file from <strong><%= area.name %></strong>? The map will no longer be displayed.</p>
     <p>Or would you like to replace it with a new file instead?</p>
     <form action="/manager/areas/<%= area.id %>/geofile" method="POST" enctype="multipart/form-data" style="margin-bottom: 1rem;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>
         Replace with new file
         <input type="file" name="geofile" accept=".geojson,.json,.kml,.gpx,.zip,.gpkg" required />
@@ -102,6 +106,7 @@
     </form>
     <hr />
     <form action="/manager/areas/<%= area.id %>/geofile/delete" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <footer>
         <button type="button" class="outline" data-close-dialog="delete-geofile-dialog">Cancel</button>
         <button type="submit" class="contrast">Delete</button>

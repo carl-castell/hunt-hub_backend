@@ -12,6 +12,7 @@
     <div class="header-actions">
       <a href="/admin" class="btn-back">← Dashboard</a>
       <form action="/logout" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <button type="submit">Log Out</button>
       </form>
     </div>
@@ -29,12 +30,15 @@
 
       <!-- Edit Name Form -->
       <form class="edit-name-form" id="editNameForm" action="/admin/estates/<%= estate.id %>/rename" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="text" name="name" value="<%= estate.name %>" required autocomplete="off" />
         <button type="submit" class="btn-save">Save</button>
         <button type="button" class="btn-cancel-edit" id="cancelEditBtn">Cancel</button>
       </form>
 
-      <form action="/admin/estates/<%= estate.id %>/delete" method="POST" id="deleteForm"></form>
+      <form action="/admin/estates/<%= estate.id %>/delete" method="POST" id="deleteForm">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      </form>
       <div class="danger-zone">
         <p>Permanently delete this estate and all its data.</p>
         <div id="deleteConfirm" style="display:none; display:flex; gap:10px; align-items:center;">
@@ -90,6 +94,7 @@
       <button class="close-modal" id="closeModal">&times;</button>
       <h3>Add Manager</h3>
       <form action="/users/managers" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="estateId" value="<%= estate.id %>" />
         <div class="form-group">
           <label for="firstName">First Name</label>

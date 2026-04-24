@@ -110,6 +110,7 @@
       <h3>Add Hunting License</h3>
     </header>
     <form action="/manager/guests/<%= guest.id %>/hunting-license" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>Expiry Date<input type="date" name="expiryDate" required /></label>
       <label>
         Upload License File
@@ -132,6 +133,7 @@
       <h3>Add Training Certificate</h3>
     </header>
     <form action="/manager/guests/<%= guest.id %>/training-certificate" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>Issue Date<input type="date" name="issueDate" required /></label>
       <label>
         Upload Certificate File
@@ -154,6 +156,7 @@
       <h3>Edit Guest</h3>
     </header>
     <form action="/manager/guests/<%= guest.id %>/update" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>First Name<input type="text" name="firstName" value="<%= guest.firstName %>" required maxlength="255" /></label>
       <label>Last Name<input type="text" name="lastName" value="<%= guest.lastName %>" required maxlength="255" /></label>
       <label>Email<input type="email" name="email" value="<%= guest.email %>" required maxlength="255" /></label>
@@ -176,6 +179,7 @@
     </header>
     <p>Are you sure you want to permanently delete <strong><%= guest.firstName %> <%= guest.lastName %></strong>? This cannot be undone.</p>
     <form action="/manager/guests/<%= guest.id %>/delete" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <footer>
         <button type="button" class="outline" data-close-dialog="delete-guest-dialog">Cancel</button>
         <button type="submit" class="contrast">Delete</button>

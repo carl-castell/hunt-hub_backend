@@ -30,6 +30,7 @@
       <h3>Edit Event</h3>
     </header>
     <form action="/manager/events/<%= event.id %>/update" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>
         Event Name
         <input type="text" name="eventName" value="<%= event.eventName %>" required maxlength="255" />
@@ -63,6 +64,7 @@
       This cannot be undone.
     </p>
     <form action="/manager/events/<%= event.id %>/delete" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <footer>
         <button type="button" class="outline" data-close-dialog="delete-event-dialog">Cancel</button>
         <button type="submit" class="contrast">Delete</button>

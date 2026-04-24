@@ -15,6 +15,7 @@ declare global {
 declare module 'express-session' {
   interface SessionData {
     user?: SessionUser;
+    csrfToken?: string;
   }
 }
 declare module 'shapefile';

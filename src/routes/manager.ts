@@ -14,6 +14,7 @@ import {
   getTrainingCertificate, postCreateTrainingCertificate, postCheckTrainingCertificate, postDeleteTrainingCertificate, postUpdateTrainingCertificate,
 } from '@/controllers/licenses';
 import { getFile } from '@/controllers/files';
+import { verifyCsrfTokenMultipart } from '@/middlewares/csrf';
 import multer from 'multer';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10_000_000 } });
@@ -32,7 +33,7 @@ managerRouter.post('/areas',                          postCreateArea);
 managerRouter.get('/areas/:id',                       getArea);
 managerRouter.post('/areas/:id/rename',               postRenameArea);
 managerRouter.post('/areas/:id/delete',               postDeleteArea);
-managerRouter.post('/areas/:id/geofile',              upload.single('geofile'), postUploadGeofile);
+managerRouter.post('/areas/:id/geofile',              upload.single('geofile'), verifyCsrfTokenMultipart, postUploadGeofile);
 managerRouter.post('/areas/:id/geofile/delete',       postDeleteGeofile);
 
 // Guests
@@ -45,14 +46,14 @@ managerRouter.post('/guests/:id/delete',              postDeleteGuest);
 
 // Hunting License
 managerRouter.get('/guests/:id/hunting-license',          getHuntingLicense);
-managerRouter.post('/guests/:id/hunting-license',         upload.array('files', 4), postCreateHuntingLicense);
+managerRouter.post('/guests/:id/hunting-license',         upload.array('files', 4), verifyCsrfTokenMultipart, postCreateHuntingLicense);
 managerRouter.post('/guests/:id/hunting-license/check',   postCheckHuntingLicense);
 managerRouter.post('/guests/:id/hunting-license/delete',  postDeleteHuntingLicense);
 managerRouter.post('/guests/:id/hunting-license/update',  postUpdateHuntingLicense);
 
 // Training Certificate
 managerRouter.get('/guests/:id/training-certificate',          getTrainingCertificate);
-managerRouter.post('/guests/:id/training-certificate',         upload.array('files', 2), postCreateTrainingCertificate);
+managerRouter.post('/guests/:id/training-certificate',         upload.array('files', 2), verifyCsrfTokenMultipart, postCreateTrainingCertificate);
 managerRouter.post('/guests/:id/training-certificate/check',   postCheckTrainingCertificate);
 managerRouter.post('/guests/:id/training-certificate/delete',  postDeleteTrainingCertificate);
 managerRouter.post('/guests/:id/training-certificate/update',  postUpdateTrainingCertificate);

@@ -9,6 +9,7 @@
 
 <article style="max-width: 600px;">
   <form method="POST" action="/manager/guests">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <label>
       First Name
       <input type="text" name="firstName" required />

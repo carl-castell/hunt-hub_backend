@@ -34,6 +34,7 @@
       <h3>Rename Estate</h3>
     </header>
     <form action="/manager/estate/rename" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>
         Estate Name
         <input type="text" name="name" value="<%= estate.name %>" required maxlength="256" />
@@ -53,6 +54,7 @@
       <h3>New Area</h3>
     </header>
     <form action="/manager/areas" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>
         Area Name
         <input type="text" name="name" placeholder="e.g. North Forest" required maxlength="255" />

@@ -52,11 +52,13 @@
       </button>
     </div>
     <form action="/manager/people/<%= targetUser.id %>/resend-activation" method="POST" style="margin-top: 0.75rem;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button type="submit" class="outline">Regenerate Link</button>
     </form>
   <% } else { %>
     <p>No pending activation token.</p>
     <form action="/manager/people/<%= targetUser.id %>/resend-activation" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button type="submit" class="outline">Generate Activation Link</button>
     </form>
   <% } %>
@@ -67,10 +69,12 @@
   <header><strong>Account Status</strong></header>
   <% if (targetUser.active) { %>
     <form action="/manager/people/<%= targetUser.id %>/deactivate" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button type="submit" class="secondary outline">Deactivate Account</button>
     </form>
   <% } else { %>
     <form action="/manager/people/<%= targetUser.id %>/reactivate" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button type="submit" class="outline">Reactivate Account</button>
     </form>
   <% } %>
@@ -86,6 +90,7 @@
       <h3>Edit Role</h3>
     </header>
     <form action="/manager/people/<%= targetUser.id %>/role" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>
         Role
         <select name="role" required>
@@ -114,6 +119,7 @@
       This cannot be undone.
     </p>
     <form action="/manager/people/<%= targetUser.id %>/delete" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <footer>
         <button type="button" class="outline" data-close-dialog="delete-user-dialog">Cancel</button>
         <button type="submit" class="contrast">Delete</button>

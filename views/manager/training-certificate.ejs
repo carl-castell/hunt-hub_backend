@@ -44,6 +44,7 @@
 
     <footer style="display: flex; gap: 1rem;">
       <form action="/manager/guests/<%= guest.id %>/training-certificate/check" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="certId" value="<%= certificate.id %>" />
         <button type="submit">✔ Certificate is Valid</button>
       </form>
@@ -60,6 +61,7 @@
         <h3>Edit Issue Date</h3>
       </header>
       <form action="/manager/guests/<%= guest.id %>/training-certificate/update" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="certId" value="<%= certificate.id %>" />
         <label>
           Issue Date
@@ -81,6 +83,7 @@
       </header>
       <p>Are you sure you want to permanently delete this training certificate? This cannot be undone.</p>
       <form action="/manager/guests/<%= guest.id %>/training-certificate/delete" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="certId" value="<%= certificate.id %>" />
         <footer>
           <button type="button" class="outline" data-close-dialog="delete-certificate-dialog">Cancel</button>

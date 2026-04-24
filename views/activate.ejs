@@ -20,6 +20,7 @@
       <% } %>
 
       <form action="/activate/<%= token %>" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <div class="form-group">
           <label for="password">Password</label>
           <input type="password" id="password" name="password" placeholder="Enter password" required />

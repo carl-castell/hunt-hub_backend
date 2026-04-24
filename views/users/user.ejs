@@ -18,6 +18,7 @@
         <a href="/manager" class="btn-back">← Dashboard</a>
       <% } %>
       <form action="/logout" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <button type="submit">Log Out</button>
       </form>
     </div>
@@ -45,6 +46,7 @@
 
       <!-- Edit Form (hidden by default) -->
       <form class="edit-user-form" id="editUserForm" action="/users/<%= targetUser.id %>/update" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <div class="form-group">
           <label for="firstName">First Name</label>
           <input type="text" id="firstName" name="firstName" value="<%= targetUser.firstName %>" required autocomplete="off" />
@@ -73,6 +75,7 @@
           <p class="activation-card-sub">This user has not activated their account yet.</p>
         </div>
         <form action="/users/<%= targetUser.id %>/resend-activation" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <button type="submit" class="btn-icon" title="Regenerate link">🔄 Regenerate</button>
         </form>
       </div>
@@ -89,16 +92,20 @@
 
       <% if (targetUser.active) { %>
         <form action="/users/<%= targetUser.id %>/deactivate" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <button type="submit" class="btn-save">Deactivate Account</button>
         </form>
       <% } else { %>
         <form action="/users/<%= targetUser.id %>/reactivate" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <button type="submit" class="btn-save">Reactivate Account</button>
         </form>
       <% } %>
 
       <% if (sessionUser.role === 'admin') { %>
-        <form action="/users/<%= targetUser.id %>/delete" method="POST" id="deleteUserForm"></form>
+        <form action="/users/<%= targetUser.id %>/delete" method="POST" id="deleteUserForm">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        </form>
         <div class="danger-zone" style="margin-top:16px;">
           <p>Permanently delete this user and all their data.</p>
           <div id="deleteUserConfirm" style="display:none; gap:10px; align-items:center;">

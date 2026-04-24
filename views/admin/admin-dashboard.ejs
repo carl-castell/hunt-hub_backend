@@ -10,6 +10,7 @@
   <header>
     <h1>Hunt-Hub <span style="font-weight:300; font-size:1rem;">Admin Dashboard</span></h1>
     <form action="/logout" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button type="submit">Log Out</button>
     </form>
   </header>
@@ -60,6 +61,7 @@
       <button class="close-modal" id="closeModal">&times;</button>
       <h3>Create New Estate</h3>
       <form action="/admin/estates" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <label for="estateName">Estate Name</label>
         <input
           type="text"

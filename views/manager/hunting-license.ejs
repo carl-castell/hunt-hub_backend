@@ -53,6 +53,7 @@
 
     <footer style="display: flex; gap: 1rem;">
       <form action="/manager/guests/<%= guest.id %>/hunting-license/check" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="licenseId" value="<%= license.id %>" />
         <button type="submit">✔ License is Valid</button>
       </form>
@@ -69,6 +70,7 @@
         <h3>Edit Expiry Date</h3>
       </header>
       <form action="/manager/guests/<%= guest.id %>/hunting-license/update" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="licenseId" value="<%= license.id %>" />
         <label>
           Expiry Date
@@ -90,6 +92,7 @@
       </header>
       <p>Are you sure you want to permanently delete this hunting license? This cannot be undone.</p>
       <form action="/manager/guests/<%= guest.id %>/hunting-license/delete" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="licenseId" value="<%= license.id %>" />
         <footer>
           <button type="button" class="outline" data-close-dialog="delete-license-dialog">Cancel</button>

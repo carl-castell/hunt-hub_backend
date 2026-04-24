@@ -31,6 +31,7 @@
       <h3>Add Team Member</h3>
     </header>
     <form action="/manager/people" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>First Name<input type="text" name="firstName" placeholder="First Name" required maxlength="255" /></label>
       <label>Last Name<input type="text" name="lastName" placeholder="Last Name" required maxlength="255" /></label>
       <label>Email<input type="email" name="email" placeholder="email@example.com" required maxlength="255" /></label>
