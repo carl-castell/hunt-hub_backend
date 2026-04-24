@@ -19,29 +19,6 @@ const updateRoleSchema = z.object({
   role: z.enum(['manager', 'staff']),
 });
 
-export async function getPeople(req: Request, res: Response) {
-  try {
-    const user = req.session.user!;
-
-    const people = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.estateId, user.estateId!));
-
-    const sorted = people.sort((a, b) => {
-      const roleOrder = { manager: 0, staff: 1, admin: 2, guest: 3 };
-      const roleDiff = roleOrder[a.role] - roleOrder[b.role];
-      if (roleDiff !== 0) return roleDiff;
-      return a.lastName.localeCompare(b.lastName);
-    });
-
-    res.render('manager/people', { title: 'People', user, people: sorted });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
-  }
-}
-
 export async function postCreateUser(req: Request, res: Response) {
   try {
     const user = req.session.user!;
@@ -77,7 +54,7 @@ export async function postCreateUser(req: Request, res: Response) {
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 48),
     });
 
-    res.redirect(`/manager/people/${newUser.id}`);
+    res.redirect('/manager/estate#people');
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -301,7 +278,7 @@ export async function postDeleteUser(req: Request, res: Response) {
     // Cascades to accounts and auth tokens
     await db.delete(usersTable).where(eq(usersTable.id, Number(id)));
 
-    res.redirect('/manager/people');
+    res.redirect('/manager/estate#people');
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

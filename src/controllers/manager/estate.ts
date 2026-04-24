@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import { estatesTable } from '../../db/schema/estates';
 import { areasTable } from '../../db/schema/areas';
+import { usersTable } from '../../db/schema/users';
 import { z } from 'zod';
 
 const renameEstateSchema = z.object({
@@ -26,11 +27,24 @@ export async function getEstate(req: Request, res: Response) {
       .from(areasTable)
       .where(eq(areasTable.estateId, user.estateId!));
 
+    const allPeople = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.estateId, user.estateId!));
+
+    const people = allPeople.sort((a, b) => {
+      const roleOrder: Record<string, number> = { manager: 0, staff: 1, admin: 2, guest: 3 };
+      const roleDiff = (roleOrder[a.role] ?? 9) - (roleOrder[b.role] ?? 9);
+      if (roleDiff !== 0) return roleDiff;
+      return a.lastName.localeCompare(b.lastName);
+    });
+
     res.render('manager/estate', {
       title: 'Estate',
       user,
       estate,
       areas,
+      people,
     });
   } catch (err) {
     console.error(err);

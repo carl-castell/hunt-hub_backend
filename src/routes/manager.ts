@@ -6,7 +6,7 @@ import { getGuests, getNewGuest, postCreateGuest, getGuest, postUpdateGuest, pos
 import { getEvents, getEvent, postCreateEvent, postUpdateEvent, postDeleteEvent } from '../controllers/manager/events';
 import { postCreateDrive, getDrive } from '../controllers/manager/drives';
 import {
-  getPeople, postCreateUser,
+  postCreateUser,
   getUser, postUpdateUserRole, postDeleteUser, postDeactivateUser, postResendActivation, postReactivateUser,
 } from '../controllers/manager/people';
 import { getAccount, postChangePassword } from '../controllers/manager/account';
@@ -76,7 +76,6 @@ managerRouter.post('/events/:eventId/drives',         postCreateDrive);
 managerRouter.get('/events/:eventId/drives/:id',      getDrive);
 
 // People
-managerRouter.get('/people',                          getPeople);
 managerRouter.post('/people',                         postCreateUser);
 managerRouter.get('/people/:id',                      getUser);
 managerRouter.post('/people/:id/role',                postUpdateUserRole);

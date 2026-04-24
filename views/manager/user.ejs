@@ -1,55 +1,45 @@
+<style>
+  .user-header { display: flex; align-items: flex-start; justify-content: space-between; }
+  .user-meta { margin-top: 0.5rem; font-size: 0.9rem; color: var(--pico-muted-color); display: flex; flex-direction: column; gap: 0.25rem; }
+</style>
+
 <% if (error) { %>
   <article style="border-left: 4px solid var(--pico-color-red-500); padding: 1rem; margin-bottom: 1.5rem;">
     <p style="margin: 0;"><%= error %></p>
   </article>
 <% } %>
 
-<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-  <h2 style="margin: 0;"><%= targetUser.firstName %> <%= targetUser.lastName %></h2>
-  <button class="outline" data-dialog="edit-role-dialog">Edit Role</button>
-  <button class="secondary outline" data-dialog="delete-user-dialog">Delete</button>
-</div>
-
-<a href="/manager/people" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Back to People</a>
-
-<!-- ── User Info ──────────────────────────────────────────────────────────── -->
 <article>
-  <dl>
-    <dt>First Name</dt>
-    <dd><%= targetUser.firstName %></dd>
-
-    <dt>Last Name</dt>
-    <dd><%= targetUser.lastName %></dd>
-
-    <dt>Email</dt>
-    <dd><%= targetUser.email %></dd>
-
-    <dt>Role</dt>
-    <dd style="text-transform: capitalize;"><%= targetUser.role %></dd>
-
-    <dt>Status</dt>
-    <dd><%= targetUser.active ? 'Active' : 'Inactive' %></dd>
-  </dl>
+  <div class="user-header">
+    <div>
+      <h2 style="margin: 0;"><%= targetUser.firstName %> <%= targetUser.lastName %></h2>
+      <div class="user-meta">
+        <span><%= targetUser.email %></span>
+        <span style="text-transform: capitalize;"><%= targetUser.role %> · <%= targetUser.active ? 'Active' : 'Inactive' %></span>
+      </div>
+    </div>
+    <% if (targetUser.id !== user.id) { %>
+      <details class="dropdown" style="margin: 0;">
+        <summary role="button" class="outline" style="padding: 0.4rem 0.8rem;">⚙</summary>
+        <ul dir="rtl">
+          <li><a href="#" data-dialog="edit-role-dialog">Edit Role</a></li>
+          <li><a href="#" style="color: var(--pico-del-color);" data-dialog="delete-user-dialog">Delete</a></li>
+        </ul>
+      </details>
+    <% } %>
+  </div>
 </article>
 
 <% if (targetUser.id !== user.id) { %>
 
-<!-- ── Activation Link ────────────────────────────────────────────────────── -->
-<article>
+<!-- Activation Link -->
+<article style="margin-top: 1.5rem;">
   <header><strong>Activation Link</strong></header>
   <% if (activationToken) { %>
     <p>Share this link with the user to activate their account:</p>
     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-      <input
-        type="text"
-        id="activation-link"
-        value="<%= domain %>/activate/<%= activationToken %>"
-        readonly
-        style="flex: 1;"
-      />
-      <button type="button" class="outline" data-copy-target="activation-link">
-        Copy
-      </button>
+      <input type="text" id="activation-link" value="<%= domain %>/activate/<%= activationToken %>" readonly style="flex: 1;" />
+      <button type="button" class="outline" data-copy-target="activation-link">Copy</button>
     </div>
     <form action="/manager/people/<%= targetUser.id %>/resend-activation" method="POST" style="margin-top: 0.75rem;">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -64,8 +54,8 @@
   <% } %>
 </article>
 
-<!-- ── Activate / Deactivate ─────────────────────────────────────────────── -->
-<article>
+<!-- Account Status -->
+<article style="margin-top: 1.5rem;">
   <header><strong>Account Status</strong></header>
   <% if (targetUser.active) { %>
     <form action="/manager/people/<%= targetUser.id %>/deactivate" method="POST">
@@ -82,7 +72,7 @@
 
 <% } %>
 
-<!-- ── Edit Role Dialog ───────────────────────────────────────────────────── -->
+<!-- Edit Role Dialog -->
 <dialog id="edit-role-dialog">
   <article>
     <header>
@@ -106,18 +96,14 @@
   </article>
 </dialog>
 
-<!-- ── Delete User Dialog ─────────────────────────────────────────────────── -->
+<!-- Delete User Dialog -->
 <dialog id="delete-user-dialog">
   <article>
     <header>
       <button aria-label="Close" rel="prev" data-close-dialog="delete-user-dialog"></button>
       <h3>Delete User</h3>
     </header>
-    <p>
-      Are you sure you want to permanently delete
-      <strong><%= targetUser.firstName %> <%= targetUser.lastName %></strong>?
-      This cannot be undone.
-    </p>
+    <p>Are you sure you want to permanently delete <strong><%= targetUser.firstName %> <%= targetUser.lastName %></strong>? This cannot be undone.</p>
     <form action="/manager/people/<%= targetUser.id %>/delete" method="POST">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <footer>

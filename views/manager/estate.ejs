@@ -1,32 +1,60 @@
-<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+<style>
+  .estate-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .section-header h3 { margin: 0; }
+  .area-row { display: block; padding: 0.55rem 0; border-bottom: 1px solid var(--pico-muted-border-color); text-decoration: none; }
+  .area-row:last-child { border-bottom: none; }
+</style>
+
+<div class="estate-header">
   <h2 style="margin: 0;"><%= estate.name %></h2>
   <button class="outline" data-dialog="rename-estate-dialog">Edit</button>
 </div>
 
-<div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
-  <a href="/manager/people" role="button" class="outline">People</a>
-</div>
-
-<!-- Areas List -->
-<section>
-  <h3>Areas</h3>
+<!-- Areas -->
+<article>
+  <div class="section-header">
+    <h3>Areas</h3>
+    <button data-dialog="create-area-dialog">+ New Area</button>
+  </div>
   <% if (areas.length === 0) { %>
-    <p>No areas yet.</p>
+    <p style="margin: 0; color: var(--pico-muted-color);">No areas yet.</p>
   <% } else { %>
-    <ul style="list-style: none; padding: 0;">
-      <% areas.forEach(area => { %>
-        <li style="margin-bottom: 0.5rem;">
-          <a href="/manager/areas/<%= area.id %>"><%= area.name %></a>
-        </li>
-      <% }) %>
-    </ul>
+    <% areas.forEach(area => { %>
+      <a class="area-row" href="/manager/areas/<%= area.id %>"><%= area.name %></a>
+    <% }) %>
   <% } %>
-  <button class="outline" style="margin-top: 1rem;" data-dialog="create-area-dialog">
-    + New Area
-  </button>
-</section>
+</article>
 
-<!-- ── Rename Estate Dialog ───────────────────────────────────────────────── -->
+<!-- People -->
+<article id="people" style="margin-top: 1.5rem;">
+  <div class="section-header">
+    <h3>People</h3>
+    <button data-dialog="create-user-dialog">+ Add Team Member</button>
+  </div>
+  <% if (people.length === 0) { %>
+    <p style="margin: 0; color: var(--pico-muted-color);">No team members yet.</p>
+  <% } else { %>
+    <figure style="margin: 0;">
+      <table>
+        <thead>
+          <tr><th>First Name</th><th>Last Name</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <% people.forEach(person => { %>
+            <tr style="cursor: pointer;" data-href="/manager/people/<%= person.id %>">
+              <td><%= person.firstName %></td>
+              <td><%= person.lastName %></td>
+              <td style="text-transform: capitalize;"><%= person.role %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </figure>
+  <% } %>
+</article>
+
+<!-- Rename Estate Dialog -->
 <dialog id="rename-estate-dialog">
   <article>
     <header>
@@ -46,7 +74,7 @@
   </article>
 </dialog>
 
-<!-- ── Create Area Dialog ─────────────────────────────────────────────────── -->
+<!-- Create Area Dialog -->
 <dialog id="create-area-dialog">
   <article>
     <header>
@@ -60,6 +88,33 @@
         <input type="text" name="name" placeholder="e.g. North Forest" required maxlength="255" />
       </label>
       <footer>
+        <button type="submit">Create</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- Add Team Member Dialog -->
+<dialog id="create-user-dialog">
+  <article>
+    <header>
+      <button aria-label="Close" rel="prev" data-close-dialog="create-user-dialog"></button>
+      <h3>Add Team Member</h3>
+    </header>
+    <form action="/manager/people" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>First Name<input type="text" name="firstName" placeholder="First Name" required maxlength="255" /></label>
+      <label>Last Name<input type="text" name="lastName" placeholder="Last Name" required maxlength="255" /></label>
+      <label>Email<input type="email" name="email" placeholder="email@example.com" required maxlength="255" /></label>
+      <label>
+        Role
+        <select name="role" required>
+          <option value="staff">Staff</option>
+          <option value="manager">Manager</option>
+        </select>
+      </label>
+      <footer>
+        <button type="button" class="outline" data-close-dialog="create-user-dialog">Cancel</button>
         <button type="submit">Create</button>
       </footer>
     </form>
