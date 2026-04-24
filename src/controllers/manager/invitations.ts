@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
 import { and, asc, count, eq, ilike, inArray, notInArray, or } from 'drizzle-orm';
+import { z } from 'zod';
 import { db } from '../../db';
 import { invitationsTable } from '../../db/schema/invitations';
 import { eventsTable } from '../../db/schema/events';
 import { usersTable } from '../../db/schema/users';
 import { contactsTable } from '../../db/schema/contacts';
 import { guestGroupMembersTable, guestGroupsTable } from '../../db/schema/guest_groups';
+import { renderTemplate, sendMail } from '../../mail';
+import { audit } from '../../audit';
 import crypto from 'crypto';
 
 const PICKER_LIMIT = 50;
@@ -264,6 +267,160 @@ export async function postStageInvitations(req: Request, res: Response) {
     }
 
     res.redirect(`/manager/events/${eventId}/invitations`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+export async function getSendInvitations(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const eventId = Number(req.params.eventId);
+    if (!Number.isFinite(eventId)) return res.status(400).send('Invalid event id');
+
+    const event = await findEvent(eventId, user.estateId!);
+    if (!event) return res.status(404).send('Event not found');
+
+    const rows = await db
+      .select({
+        id: invitationsTable.id,
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        email: contactsTable.email,
+      })
+      .from(invitationsTable)
+      .innerJoin(usersTable, eq(invitationsTable.userId, usersTable.id))
+      .innerJoin(contactsTable, eq(contactsTable.userId, usersTable.id))
+      .where(and(eq(invitationsTable.eventId, eventId), eq(invitationsTable.status, 'staged')))
+      .orderBy(asc(usersTable.lastName), asc(usersTable.firstName));
+
+    res.render('manager/invitations/send', {
+      title: 'Send Invitations',
+      user,
+      event,
+      invitations: rows,
+      breadcrumbs: [
+        { label: 'Events', href: '/manager/events' },
+        { label: event.eventName, href: `/manager/events/${eventId}` },
+        { label: 'Guest List', href: `/manager/events/${eventId}/invitations` },
+        { label: 'Send Invitations' },
+      ],
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+}
+
+const sendSchema = z.object({
+  message: z.string().min(1, 'Message is required').max(5000),
+  respondBy: z.string().optional(),
+  invitationIds: z.preprocess(
+    (val) => (Array.isArray(val) ? val : val != null && val !== '' ? [val] : []),
+    z.array(z.coerce.number().int().positive())
+  ),
+});
+
+export async function postSendInvitations(req: Request, res: Response) {
+  try {
+    const user = req.session.user!;
+    const eventId = Number(req.params.eventId);
+    if (!Number.isFinite(eventId)) return res.status(400).send('Invalid event id');
+
+    const event = await findEvent(eventId, user.estateId!);
+    if (!event) return res.status(404).send('Event not found');
+
+    const parsed = sendSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).send(parsed.error.issues[0].message);
+
+    const { message, respondBy, invitationIds } = parsed.data;
+
+    if (invitationIds.length === 0) return res.status(400).send('Select at least one guest.');
+
+    const respondByDate: Date | null = (() => {
+      if (!respondBy) return null;
+      const d = new Date(respondBy);
+      return isNaN(d.getTime()) ? null : d;
+    })();
+
+    type ResultRow = { firstName: string; lastName: string; email: string };
+    const sent: ResultRow[] = [];
+    const failed: (ResultRow & { error: string })[] = [];
+
+    for (const invId of invitationIds) {
+      const [row] = await db
+        .select({
+          invId: invitationsTable.id,
+          status: invitationsTable.status,
+          firstName: usersTable.firstName,
+          lastName: usersTable.lastName,
+          email: contactsTable.email,
+        })
+        .from(invitationsTable)
+        .innerJoin(usersTable, eq(invitationsTable.userId, usersTable.id))
+        .innerJoin(contactsTable, eq(contactsTable.userId, usersTable.id))
+        .where(and(
+          eq(invitationsTable.id, invId),
+          eq(invitationsTable.eventId, eventId),
+          eq(invitationsTable.status, 'staged'),
+        ))
+        .limit(1);
+
+      if (!row) continue;
+
+      const personalised = message
+        .replace(/\{\{firstName\}\}/g, row.firstName)
+        .replace(/\{\{lastName\}\}/g, row.lastName);
+
+      try {
+        const html = await renderTemplate('invitation', {
+          message: personalised,
+          eventName: event.eventName,
+          year: new Date().getFullYear(),
+        });
+
+        await sendMail({
+          to: row.email,
+          subject: `Invitation – ${event.eventName}`,
+          html,
+        });
+
+        await db
+          .update(invitationsTable)
+          .set({
+            status: 'sent_email',
+            emailSentAt: new Date(),
+            ...(respondByDate ? { respondBy: respondByDate } : {}),
+          })
+          .where(eq(invitationsTable.id, invId));
+
+        sent.push({ firstName: row.firstName, lastName: row.lastName, email: row.email });
+      } catch (emailErr) {
+        console.error(`[invite] Failed to send to ${row.email}:`, emailErr);
+        failed.push({
+          firstName: row.firstName,
+          lastName: row.lastName,
+          email: row.email,
+          error: emailErr instanceof Error ? emailErr.message : 'Unknown error',
+        });
+      }
+    }
+
+    await audit({
+      userId: user.id,
+      event: 'invitation_email_sent',
+      ip: req.ip,
+      metadata: { eventId, sentCount: sent.length, failedCount: failed.length },
+    });
+
+    const isPartial = req.headers['hx-request'] === 'true';
+    if (isPartial) {
+      res.locals.layout = false;
+      return res.render('manager/invitations/send-result', { event, sent, failed });
+    }
+
+    res.redirect(`/manager/events/${eventId}/invitations?sent=${sent.length}&failed=${failed.length}`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

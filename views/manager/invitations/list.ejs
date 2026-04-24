@@ -5,11 +5,14 @@
 
 <div class="inv-list-header">
   <h2>Guest List — <%= event.eventName %></h2>
-  <a href="/manager/events/<%= event.id %>/invitations/new" role="button">+ Select Guests</a>
+  <div style="display:flex; gap:0.5rem;">
+    <a href="/manager/events/<%= event.id %>/invitations/send" role="button" class="outline">Send Invitations</a>
+    <a href="/manager/events/<%= event.id %>/invitations/new" role="button">+ Select Guests</a>
+  </div>
 </div>
 
 <article>
-  <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:1rem; flex-wrap:wrap;">
+  <div style="display:flex; gap:0.75rem; align-items:center; justify-content:flex-end; margin-bottom:1rem; flex-wrap:wrap;">
     <button id="clear-filters" type="button" class="outline secondary" style="margin:0;">Clear</button>
     <select name="status" style="margin:0; width:auto;"
       hx-get="/manager/events/<%= event.id %>/invitations"

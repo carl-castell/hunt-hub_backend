@@ -12,7 +12,8 @@ type AuditEvent =
   | 'user_reactivated'
   | 'user_resend_activation'
   | 'estate_created'
-  | 'estate_deleted';
+  | 'estate_deleted'
+  | 'invitation_email_sent';
 
 interface AuditOptions {
   userId?: number | null;

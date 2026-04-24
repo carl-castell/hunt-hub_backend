@@ -2,14 +2,15 @@ import nodemailer from 'nodemailer';
 import ejs from 'ejs';
 import path from 'path';
 
+const smtpPort = Number(process.env.SMTP_PORT) || 587;
+
 const transporter = nodemailer.createTransport({
   host: process.env.MAILGUN_SMTP_HOST || 'smtp.mailgun.org',
-  port: 587,
+  port: smtpPort,
   secure: false,
-  auth: {
-    user: process.env.MAILGUN_SMTP_USER,
-    pass: process.env.MAILGUN_SMTP_PASSWORD,
-  },
+  auth: process.env.MAILGUN_SMTP_USER
+    ? { user: process.env.MAILGUN_SMTP_USER, pass: process.env.MAILGUN_SMTP_PASSWORD }
+    : undefined,
 });
 
 export async function renderTemplate(template: string, data: Record<string, unknown>): Promise<string> {

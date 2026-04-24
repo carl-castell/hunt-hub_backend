@@ -50,6 +50,8 @@ export const invitationsTable = pgTable(
     openedAt: timestamp("opened_at"),
 
     status: invitationStatusEnum().notNull().default("staged"),
+
+    emailSentAt: timestamp("email_sent_at"),
   },
   (t) => ({
     uniqPublicId: unique("uniq_invitations_public_id").on(t.publicId),

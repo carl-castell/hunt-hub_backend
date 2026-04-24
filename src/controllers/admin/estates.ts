@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../../db';
 import { estatesTable, usersTable } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { createEstateSchema, renameEstateSchema } from '@/schemas';
 import { audit } from '@/audit';
 
@@ -47,7 +47,10 @@ export async function getEstate(req: Request, res: Response) {
     const managers = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.estateId, Number(id)));
+      .where(and(
+        eq(usersTable.estateId, Number(id)),
+        inArray(usersTable.role, ['manager', 'staff'])
+      ));
 
     res.render('admin/estate', {
       title: estate.name,
