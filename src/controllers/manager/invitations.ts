@@ -352,6 +352,7 @@ export async function postSendInvitations(req: Request, res: Response) {
       const [row] = await db
         .select({
           invId: invitationsTable.id,
+          publicId: invitationsTable.publicId,
           status: invitationsTable.status,
           firstName: usersTable.firstName,
           lastName: usersTable.lastName,
@@ -374,16 +375,20 @@ export async function postSendInvitations(req: Request, res: Response) {
         .replace(/\{\{lastName\}\}/g, row.lastName);
 
       try {
+        const baseUrl = process.env.APP_URL ?? `${req.protocol}://${req.get('host')}`;
+        const rsvpUrl = `${baseUrl}/rsvp/${row.publicId}`;
         const html = await renderTemplate('invitation', {
           message: personalised,
           eventName: event.eventName,
           year: new Date().getFullYear(),
+          rsvpUrl,
         });
 
         await sendMail({
           to: row.email,
           subject: `Invitation – ${event.eventName}`,
           html,
+          fromName: res.locals.estateName || undefined,
         });
 
         await db

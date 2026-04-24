@@ -18,6 +18,7 @@ import managerRouter from "./routes/manager";
 import usersRouter from './routes/users';
 import activateRouter from './routes/activate';
 import mapRouter from "./routes/map";
+import rsvpRouter from './routes/rsvp';
 
 import { estatesTable } from './db/schema/estates';
 import { db } from './db';
@@ -115,5 +116,6 @@ app.use("/manager", requireManager, managerRouter);
 
 app.use('/users', requireAuth, usersRouter);
 app.use('/activate', activateRouter);
+app.use('/rsvp', rsvpRouter);
 
 export default app;

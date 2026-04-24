@@ -18,9 +18,9 @@ export async function renderTemplate(template: string, data: Record<string, unkn
   return ejs.renderFile(templatePath, data);
 }
 
-export async function sendMail({ to, subject, html }: { to: string; subject: string; html: string }) {
+export async function sendMail({ to, subject, html, fromName }: { to: string; subject: string; html: string; fromName?: string }) {
   return transporter.sendMail({
-    from: `"Hunt Hub" <${process.env.MAIL_FROM}>`,
+    from: `"${fromName ?? 'Hunt Hub'}" <${process.env.MAIL_FROM}>`,
     to,
     subject,
     html,
