@@ -61,7 +61,6 @@
         <span class="guest-meta-label">Phone</span>       <span><%= guest.phone || '—' %></span>
         <span class="guest-meta-label">Date of Birth</span><span><%= fmtDate(guest.dateOfBirth) %></span>
         <span class="guest-meta-label">Rating</span>      <span><%= guest.rating != null ? guest.rating + ' / 5' : '—' %></span>
-        <span class="guest-meta-label">Groups</span>      <span><%= guestGroups.length > 0 ? guestGroups.map(g => g.name).join(', ') : '—' %></span>
       </div>
     </div>
     <details class="dropdown" style="margin: 0;">
