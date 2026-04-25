@@ -10,9 +10,8 @@
 <!-- ── Geo File Section ────────────────────────────────────────────────────── -->
 <% if (area.geofile) { %>
 
-  <% if (area.geofile) { %>
   <div style="margin-top: 1.5rem;">
-    <%- include('../partials/map', {
+    <%- include('../../partials/map', {
       mapId:      'area-map',
       mapHeight:  '450px',
       mapTile:    'topo',
@@ -21,7 +20,6 @@
       mapDataUrl: `/map/area/${area.id}`,
     }) %>
   </div>
-<% } %>
 
   <div style="display: flex; gap: 1rem; margin: 1rem 0 2rem;">
     <button class="secondary outline" data-dialog="delete-geofile-dialog">Delete Geo File</button>
