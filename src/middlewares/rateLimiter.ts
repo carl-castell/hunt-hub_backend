@@ -4,7 +4,7 @@ const isTest = process.env.NODE_ENV === 'test';
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isTest ? 0 : 100,        // 0 = unlimited
+  max: isTest ? 0 : 500,        // 0 = unlimited
   skip: () => isTest,
   standardHeaders: true,
   legacyHeaders: false,

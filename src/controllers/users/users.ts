@@ -32,7 +32,7 @@ export async function getUser(req: Request, res: Response) {
       .where(eq(userAuthTokensTable.userId, user.id))
       .limit(1);
 
-    const domain = process.env.DOMAIN || 'http://localhost:3000';
+    const domain = `${req.protocol}://${req.get('host')}`;
 
     res.render('admin/user', {
       layout: false,

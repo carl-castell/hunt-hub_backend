@@ -3,6 +3,9 @@ import { db, pool } from './index';
 import { usersTable } from './schema/users';
 import { accountsTable } from './schema/accounts';
 import { sql } from 'drizzle-orm';
+import { Pool } from 'pg';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import bcrypt from 'bcrypt';
 import * as readline from 'readline';
 
@@ -59,6 +62,7 @@ async function main() {
     `DROP TABLE IF EXISTS users CASCADE`,
     `DROP TABLE IF EXISTS estates CASCADE`,
     `DROP TABLE IF EXISTS __drizzle_migrations CASCADE`,
+    `DROP SCHEMA IF EXISTS drizzle CASCADE`,
     `DROP TYPE IF EXISTS role CASCADE`,
     `DROP TYPE IF EXISTS invitation_response CASCADE`,
     `DROP TYPE IF EXISTS invitation_status CASCADE`,
@@ -74,12 +78,14 @@ async function main() {
   console.log('> PostGIS extension enabled');
 
   console.log('> syncing schema...');
-  if (process.env.DB_PROVIDER === 'neon') {
-    const { migrate } = await import('drizzle-orm/neon-http/migrator');
-    await migrate(db as any, { migrationsFolder: './drizzle' });
-  } else {
-    const { migrate } = await import('drizzle-orm/node-postgres/migrator');
-    await migrate(db as any, { migrationsFolder: './drizzle' });
+  const migUrl = process.env.DB_PROVIDER === 'neon'
+    ? process.env.NEON_DATABASE_URL!
+    : process.env.LOCAL_DATABASE_URL!;
+  const migPool = new Pool({ connectionString: migUrl });
+  try {
+    await migrate(drizzlePg(migPool), { migrationsFolder: './drizzle' });
+  } finally {
+    await migPool.end();
   }
   console.log('> schema sync complete\n');
 
