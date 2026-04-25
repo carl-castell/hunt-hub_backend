@@ -6,7 +6,6 @@ import { standsTable } from '@/db/schema/stands';
 import { z } from 'zod';
 import toGeoJSON from '@tmcw/togeojson';
 import { DOMParser } from '@xmldom/xmldom';
-import gdal from 'gdal-async';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
@@ -118,7 +117,6 @@ export async function postRenameArea(req: Request, res: Response) {
         id: areasTable.id,
         name: areasTable.name,
         estateId: areasTable.estateId,
-        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
       })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
@@ -153,7 +151,6 @@ export async function postDeleteArea(req: Request, res: Response) {
         id: areasTable.id,
         name: areasTable.name,
         estateId: areasTable.estateId,
-        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
       })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
@@ -188,7 +185,6 @@ export async function postUploadGeofile(req: Request, res: Response) {
         id: areasTable.id,
         name: areasTable.name,
         estateId: areasTable.estateId,
-        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
       })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
@@ -251,6 +247,15 @@ export async function postUploadGeofile(req: Request, res: Response) {
       const gpkgPath = path.join(tmpDir, 'upload.gpkg');
       await fs.writeFile(gpkgPath, req.file.buffer);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let gdal: any;
+      try {
+        gdal = (await import('gdal-async')).default;
+      } catch {
+        await fs.rm(tmpDir, { recursive: true });
+        return res.status(400).send('GeoPackage (.gpkg) is not supported on this server. Use .geojson, .kml, .gpx, or .zip instead.');
+      }
+
       const ds = await gdal.openAsync(gpkgPath);
       const features: any[] = [];
 
@@ -300,7 +305,6 @@ export async function postDeleteGeofile(req: Request, res: Response) {
         id: areasTable.id,
         name: areasTable.name,
         estateId: areasTable.estateId,
-        geofile: sql<string>`ST_AsGeoJSON(geofile)`,
       })
       .from(areasTable)
       .where(eq(areasTable.id, Number(id)))
