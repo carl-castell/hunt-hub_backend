@@ -38,6 +38,7 @@
     if (totalDays > 365) return 'more than a year';
     return `${totalDays} day${totalDays !== 1 ? 's' : ''} ago`;
   }
+  const today = new Date().toISOString().split('T')[0];
 %>
 
 <style>
@@ -219,7 +220,7 @@
     </header>
     <form id="license-upload-form" action="/manager/guests/<%= guest.id %>/hunting-license" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <label>Expiry Date<input type="date" name="expiryDate" required /></label>
+      <label>Expiry Date<input type="date" name="expiryDate" min="<%= today %>" required /></label>
       <label>
         Upload License File
         <input type="file" name="files" accept=".jpg,.jpeg,.png,.webp,.heic,.pdf" multiple required />
@@ -242,7 +243,7 @@
     </header>
     <form id="certificate-upload-form" action="/manager/guests/<%= guest.id %>/training-certificate" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <label>Issue Date<input type="date" name="issueDate" required /></label>
+      <label>Issue Date<input type="date" name="issueDate" max="<%= today %>" required /></label>
       <label>
         Upload Certificate File
         <input type="file" name="files" accept=".jpg,.jpeg,.png,.webp,.heic,.pdf" multiple required />
