@@ -61,6 +61,9 @@ app.use(helmet({
         "https://*.opentopomap.org",
         "https://server.arcgisonline.com",
       ],
+      "frame-ancestors": ["'self'"],
+      "frame-src": ["'self'"],
+      "worker-src": ["'self'", "https://unpkg.com"],
     },
   },
 }));

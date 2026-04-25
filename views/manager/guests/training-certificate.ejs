@@ -10,62 +10,108 @@
   }
 %>
 
-<a href="/manager/guests/<%= guest.id %>" role="button" class="outline" style="margin-bottom: 2rem; display: inline-block;">← Back to Guest</a>
-
-<h2><%= guest.firstName %> <%= guest.lastName %></h2>
-<p><strong>Date of Birth:</strong> <%= fmtDate(guest.dateOfBirth) %></p>
-
-<h3>Training Certificate</h3>
+<h2>Training Certificate</h2>
 
 <% if (!certificate) { %>
+  <p style="margin: 0 0 0.25rem; font-weight: 600;"><%= guest.firstName %> <%= guest.lastName %></p>
+  <p style="color: var(--pico-muted-color);">Date of Birth: <%= fmtDate(guest.dateOfBirth) %></p>
   <p style="color: #999;">No certificate selected.</p>
 <% } else { %>
+  <%
+    const issueUtc = new Date(`${certificate.issueDate}T00:00:00Z`);
+    const nowUtc = new Date(); nowUtc.setUTCHours(0,0,0,0);
+    const diffMs = nowUtc - issueUtc;
+    const totalDays = Math.floor(diffMs / 86400000);
+    let issueLabel, issueColor;
+    if (totalDays > 365) {
+      issueLabel = 'more than one year ago';
+      issueColor = '#dc2626';
+    } else {
+      const mos = Math.floor((totalDays % 365) / 30);
+      const dys = totalDays % 30;
+      const parts = [];
+      if (mos) parts.push(`${mos} month${mos !== 1 ? 's' : ''}`);
+      if (dys || parts.length === 0) parts.push(`${dys} day${dys !== 1 ? 's' : ''}`);
+      issueLabel = `issued ${parts.join(', ')} ago`;
+      issueColor = '#16a34a';
+    }
+    const today = new Date().toISOString().split('T')[0];
+  %>
+
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem;">
+    <div>
+      <p style="margin: 0 0 0.25rem; font-weight: 600; font-size: 1.05rem;"><%= guest.firstName %> <%= guest.lastName %></p>
+      <p style="margin: 0; color: var(--pico-muted-color);">Date of Birth: <%= fmtDate(guest.dateOfBirth) %></p>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+      <% if (certificate.checked) { %>
+        <span style="color: #0077cc; font-size: 0.9rem;">✔ Checked (<%= fmtDate(certificate.checkedAt) %>)</span>
+      <% } %>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+        <% if (!certificate.checked) { %>
+          <form action="/manager/guests/<%= guest.id %>/training-certificate/check" method="POST" style="margin: 0;">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="certId" value="<%= certificate.id %>" />
+            <button type="submit" style="margin: 0; background: #16a34a; border-color: #16a34a;">date is valid</button>
+          </form>
+        <% } %>
+        <button class="outline" data-dialog="edit-certificate-dialog" style="margin: 0;"><%= certificate.checked ? 'update certificate date' : 'edit date' %></button>
+        <button class="secondary outline" data-dialog="delete-certificate-dialog" style="margin: 0;">delete certificate</button>
+      </div>
+    </div>
+  </div>
+
   <article>
     <header>
-      <div style="display: flex; align-items: center; gap: 1rem;">
-        <strong>Uploaded: <%= fmtDate(certificate.uploadDate) %></strong>
-        <% if (certificate.checked) { %>
-          <span style="color: #0077cc;">✔ Checked (<%= fmtDate(certificate.checkedAt) %>)</span>
-        <% } else { %>
-          <span style="color: #999;">✗ Unchecked</span>
-        <% } %>
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <p style="margin: 0;"><strong>Issue Date:</strong> <%= fmtDate(certificate.issueDate) %> <span style="color: <%= issueColor %>; font-size: 0.9rem;">(<%= issueLabel %>)</span></p>
+        <small style="color: var(--pico-muted-color);">Uploaded: <%= fmtDate(certificate.uploadDate) %></small>
       </div>
     </header>
-
-    <p><strong>Issue Date:</strong> <%= fmtDate(certificate.issueDate) %></p>
 
     <% certificate.attachments.forEach(attachment => { %>
       <% if (attachment.contentType.startsWith('image/')) { %>
         <img src="/manager/files/<%= attachment.key %>" style="max-width: 100%; margin-bottom: 1rem;" />
       <% } else { %>
-        <p><a href="/manager/files/<%= attachment.key %>" target="_blank">View Document (<%= attachment.originalName %>)</a></p>
+        <div class="pdf-viewer" data-pdf-src="/manager/files/<%= attachment.key %>" style="margin-bottom: 1rem;"></div>
       <% } %>
     <% }) %>
-
-    <footer style="display: flex; gap: 1rem;">
-      <form action="/manager/guests/<%= guest.id %>/training-certificate/check" method="POST">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <input type="hidden" name="certId" value="<%= certificate.id %>" />
-        <button type="submit">✔ Certificate is Valid</button>
-      </form>
-
-      <button class="outline" data-dialog="edit-certificate-dialog">Edit Issue Date</button>
-      <button class="secondary outline" data-dialog="delete-certificate-dialog">Delete Certificate</button>
-    </footer>
+    <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script>
+      (function () {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        async function renderPdf(container) {
+          const pdf = await pdfjsLib.getDocument(container.dataset.pdfSrc).promise;
+          const w = container.clientWidth || 800;
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const base = page.getViewport({ scale: 1 });
+            const vp = page.getViewport({ scale: w / base.width });
+            const canvas = document.createElement('canvas');
+            canvas.width = vp.width;
+            canvas.height = vp.height;
+            canvas.style.cssText = 'width:100%;display:block;margin-bottom:0.5rem;';
+            container.appendChild(canvas);
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+          }
+        }
+        document.querySelectorAll('.pdf-viewer').forEach(renderPdf);
+      })();
+    </script>
   </article>
 
   <dialog id="edit-certificate-dialog">
     <article>
       <header>
         <button aria-label="Close" rel="prev" data-close-dialog="edit-certificate-dialog"></button>
-        <h3>Edit Issue Date</h3>
+        <h3>Update Certificate Date</h3>
       </header>
       <form action="/manager/guests/<%= guest.id %>/training-certificate/update" method="POST">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="certId" value="<%= certificate.id %>" />
         <label>
           Issue Date
-          <input type="date" name="issueDate" value="<%= certificate.issueDate %>" required />
+          <input type="date" name="issueDate" value="<%= certificate.issueDate %>" max="<%= today %>" required />
         </label>
         <footer>
           <button type="button" class="outline" data-close-dialog="edit-certificate-dialog">Cancel</button>

@@ -34,6 +34,16 @@ const licenseSchema = z.object({
     }, 'Expiry date cannot be in the past'),
 });
 
+const licenseEditSchema = z.object({
+  expiryDate: z
+    .string()
+    .min(1)
+    .refine((v) => {
+      const d = new Date(`${v}T00:00:00Z`);
+      return !isNaN(d.getTime());
+    }, 'Invalid expiry date'),
+});
+
 const certSchema = z.object({
   issueDate: z
     .string()
@@ -278,12 +288,15 @@ export async function postUpdateHuntingLicense(req: Request, res: Response) {
       return res.status(404).send('License not found');
     }
 
-    const result = licenseSchema.safeParse(req.body);
+    const result = licenseEditSchema.safeParse(req.body);
     if (!result.success) return res.status(400).send(result.error.issues[0].message);
 
     await db
       .update(huntingLicensesTable)
-      .set({ expiryDate: result.data.expiryDate })
+      .set({
+        expiryDate: result.data.expiryDate,
+        ...(!license.checked && { checked: true, checkedAt: new Date() }),
+      })
       .where(eq(huntingLicensesTable.id, licenseId));
 
     res.redirect(`/manager/guests/${id}/hunting-license?licenseId=${licenseId}`);
@@ -485,7 +498,10 @@ export async function postUpdateTrainingCertificate(req: Request, res: Response)
 
     await db
       .update(trainingCertificatesTable)
-      .set({ issueDate: result.data.issueDate })
+      .set({
+        issueDate: result.data.issueDate,
+        ...(!certificate.checked && { checked: true, checkedAt: new Date() }),
+      })
       .where(eq(trainingCertificatesTable.id, certId));
 
     res.redirect(`/manager/guests/${id}/training-certificate?certId=${certId}`);

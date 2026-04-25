@@ -259,10 +259,29 @@
 
 <script>
   (function () {
+    var MAX_BYTES = 20 * 1024 * 1024;
+
+    function checkFileSizes(input) {
+      var files = Array.from(input.files);
+      var tooBig = files.filter(function (f) { return f.size > MAX_BYTES; });
+      if (tooBig.length) {
+        alert('The following file(s) exceed the 20 MB limit and cannot be uploaded:\n' +
+          tooBig.map(function (f) { return '• ' + f.name + ' (' + (f.size / 1024 / 1024).toFixed(1) + ' MB)'; }).join('\n'));
+        input.value = '';
+        return false;
+      }
+      return true;
+    }
+
     function bindUploadLoading(formId, uploadBtnId, cancelBtnId) {
       var form = document.getElementById(formId);
       if (!form) return;
-      form.addEventListener('submit', function () {
+      var fileInput = form.querySelector('input[type="file"]');
+      if (fileInput) {
+        fileInput.addEventListener('change', function () { checkFileSizes(fileInput); });
+      }
+      form.addEventListener('submit', function (e) {
+        if (fileInput && !checkFileSizes(fileInput)) { e.preventDefault(); return; }
         var btn = document.getElementById(uploadBtnId);
         var cancel = document.getElementById(cancelBtnId);
         if (btn) btn.setAttribute('aria-busy', 'true');

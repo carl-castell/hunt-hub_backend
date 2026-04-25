@@ -59,7 +59,7 @@
 
       <label style="max-width:260px;">
         Respond By <small style="font-weight:normal;">(optional)</small>
-        <input type="date" name="respondBy" />
+        <input type="date" name="respondBy" min="<%= new Date().toISOString().split('T')[0] %>" />
       </label>
     </article>
 

@@ -20,7 +20,7 @@ import { getFile } from '@/controllers/files';
 import { verifyCsrfTokenMultipart } from '@/middlewares/csrf';
 import multer from 'multer';
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10_000_000 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20_000_000 } });
 
 const managerRouter: Router = express.Router();
 

@@ -48,6 +48,7 @@ export async function getFile(req: Request, res: Response) {
     if (!object.Body) return res.status(404).send('File not found');
 
     res.setHeader('Content-Type', attachment.contentType);
+    res.setHeader('Content-Disposition', 'inline');
     if (object.ContentLength) res.setHeader('Content-Length', object.ContentLength);
 
     (object.Body as NodeJS.ReadableStream).pipe(res);
