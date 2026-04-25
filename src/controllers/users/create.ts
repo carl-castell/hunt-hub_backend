@@ -47,8 +47,8 @@ export async function createManager(req: Request, res: Response) {
 
     // Send activation email
     try {
-      const domain = process.env.DOMAIN ?? 'http://localhost:3000';
-      const activationLink = `${domain}/activate/${token}`;
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const activationLink = `${baseUrl}/activate/${token}`;
 
       const html = await renderTemplate('activation', {
         firstName,

@@ -1,9 +1,8 @@
 import 'dotenv/config';
 import { db, pool } from './index';
-import * as schema from './schema';
 import { usersTable } from './schema/users';
 import { accountsTable } from './schema/accounts';
-import { getTableName, sql, Table } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 import * as readline from 'readline';
 
@@ -23,12 +22,6 @@ async function confirm(question: string): Promise<boolean> {
   });
 }
 
-async function resetTable(table: Table) {
-  return db.execute(
-    sql.raw(`TRUNCATE TABLE ${getTableName(table)} RESTART IDENTITY CASCADE`)
-  );
-}
-
 async function main() {
   console.log('\x1b[33m%s\x1b[0m', '⚠️  WARNING: This will delete all data and reseed the database.');
   console.log(`   DB_PROVIDER: ${process.env.DB_PROVIDER}`);
@@ -40,64 +33,55 @@ async function main() {
     process.exit(0);
   }
 
+  console.log('> dropping schema objects...');
+  const drops = [
+    `DROP TABLE IF EXISTS session CASCADE`,
+    `DROP TABLE IF EXISTS drive_stand_assignments CASCADE`,
+    `DROP TABLE IF EXISTS drive_groups CASCADE`,
+    `DROP TABLE IF EXISTS template_stand_assignments CASCADE`,
+    `DROP TABLE IF EXISTS template_groups CASCADE`,
+    `DROP TABLE IF EXISTS templates CASCADE`,
+    `DROP TABLE IF EXISTS training_certificate_attachments CASCADE`,
+    `DROP TABLE IF EXISTS hunting_license_attachments CASCADE`,
+    `DROP TABLE IF EXISTS training_certificates CASCADE`,
+    `DROP TABLE IF EXISTS hunting_licenses CASCADE`,
+    `DROP TABLE IF EXISTS drives CASCADE`,
+    `DROP TABLE IF EXISTS stands CASCADE`,
+    `DROP TABLE IF EXISTS areas CASCADE`,
+    `DROP TABLE IF EXISTS invitations CASCADE`,
+    `DROP TABLE IF EXISTS events CASCADE`,
+    `DROP TABLE IF EXISTS user_auth_tokens CASCADE`,
+    `DROP TABLE IF EXISTS audit_logs CASCADE`,
+    `DROP TABLE IF EXISTS guest_group_members CASCADE`,
+    `DROP TABLE IF EXISTS guest_groups CASCADE`,
+    `DROP TABLE IF EXISTS accounts CASCADE`,
+    `DROP TABLE IF EXISTS contacts CASCADE`,
+    `DROP TABLE IF EXISTS users CASCADE`,
+    `DROP TABLE IF EXISTS estates CASCADE`,
+    `DROP TABLE IF EXISTS __drizzle_migrations CASCADE`,
+    `DROP TYPE IF EXISTS role CASCADE`,
+    `DROP TYPE IF EXISTS invitation_response CASCADE`,
+    `DROP TYPE IF EXISTS invitation_status CASCADE`,
+    `DROP TYPE IF EXISTS attachment_kind CASCADE`,
+    `DROP TYPE IF EXISTS token_type CASCADE`,
+  ];
+  for (const stmt of drops) {
+    await db.execute(sql.raw(stmt));
+  }
+  console.log('> schema objects dropped\n');
+
   await db.execute(sql`CREATE EXTENSION IF NOT EXISTS postgis`);
   console.log('> PostGIS extension enabled');
 
-  try {
-    await db.execute(sql.raw(`TRUNCATE TABLE session`));
-    console.log('> truncated session table');
-
-    for (const table of [
-      schema.driveStandAssignmentsTable,
-      schema.driveGroupsTable,
-      schema.templateStandAssignmentsTable,
-      schema.templateGroupsTable,
-      schema.templatesTable,
-      schema.trainingCertificateAttachmentsTable,
-      schema.huntingLicenseAttachmentsTable,
-      schema.trainingCertificatesTable,
-      schema.huntingLicensesTable,
-      schema.drivesTable,
-      schema.standsTable,
-      schema.areasTable,
-      schema.invitationsTable,
-      schema.eventsTable,
-      schema.userAuthTokensTable,
-      schema.auditLogsTable,
-      schema.accountsTable,
-      schema.contactsTable,
-      schema.usersTable,
-      schema.estatesTable,
-    ]) {
-      await resetTable(table);
-    }
-
-    console.log('> truncated tables \n> restarted identity \n');
-  } catch (error) {
-    console.error('Error resetting tables:', error);
-    process.exit(1);
+  console.log('> syncing schema...');
+  if (process.env.DB_PROVIDER === 'neon') {
+    const { migrate } = await import('drizzle-orm/neon-http/migrator');
+    await migrate(db as any, { migrationsFolder: './drizzle' });
+  } else {
+    const { migrate } = await import('drizzle-orm/node-postgres/migrator');
+    await migrate(db as any, { migrationsFolder: './drizzle' });
   }
-
-  await db.execute(sql`
-    DO $$
-    BEGIN
-      IF EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'areas'
-          AND column_name = 'geofile'
-          AND data_type != 'USER-DEFINED'
-      ) THEN
-        ALTER TABLE areas
-        ALTER COLUMN geofile
-        SET DATA TYPE geometry(GeometryCollection, 4326)
-        USING CASE
-          WHEN geofile IS NOT NULL THEN ST_GeomFromGeoJSON(geofile)
-          ELSE NULL
-        END;
-      END IF;
-    END $$;
-  `);
-  console.log('> areas.geofile checked/migrated to geometry(GeometryCollection, 4326)');
+  console.log('> schema sync complete\n');
 
   await db.execute(sql`
     CREATE INDEX IF NOT EXISTS areas_geofile_gist ON areas USING GIST (geofile)
@@ -107,7 +91,6 @@ async function main() {
   console.log('> seeding started');
   const startTime = Date.now();
 
-  // Admin user
   const [adminUser] = await db
     .insert(usersTable)
     .values({

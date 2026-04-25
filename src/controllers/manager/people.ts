@@ -115,7 +115,7 @@ export async function getUser(req: Request, res: Response) {
       .where(eq(accountsTable.userId, targetUser.id))
       .limit(1);
 
-    const domain = process.env.DOMAIN || 'http://localhost:3000';
+    const domain = `${req.protocol}://${req.get('host')}`;
 
     const breadcrumbs = [{ label: 'Estate', href: '/manager/estate' }, { label: `${targetUser.firstName} ${targetUser.lastName}` }];
     res.render('manager/user', {
@@ -160,7 +160,7 @@ export async function postUpdateUserRole(req: Request, res: Response) {
       .where(eq(accountsTable.userId, targetUser.id))
       .limit(1);
 
-    const domain = process.env.DOMAIN || 'http://localhost:3000';
+    const domain = `${req.protocol}://${req.get('host')}`;
 
     const result = updateRoleSchema.safeParse(req.body);
     if (!result.success) return res.status(400).send(result.error.issues[0].message);

@@ -16,6 +16,7 @@ export async function seedMockData() {
   console.log(`  ✔ Estate created: "${estate.name}" (id: ${estate.id})`);
 
   // 2. Create the manager user
+  
   const [manager] = await db
     .insert(usersTable)
     .values({
