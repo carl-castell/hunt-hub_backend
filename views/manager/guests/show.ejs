@@ -217,7 +217,7 @@
       <button aria-label="Close" rel="prev" data-close-dialog="add-license-dialog"></button>
       <h3>Add Hunting License</h3>
     </header>
-    <form action="/manager/guests/<%= guest.id %>/hunting-license" method="POST" enctype="multipart/form-data">
+    <form id="license-upload-form" action="/manager/guests/<%= guest.id %>/hunting-license" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>Expiry Date<input type="date" name="expiryDate" required /></label>
       <label>
@@ -226,8 +226,8 @@
         <small>One PDF or up to 4 images</small>
       </label>
       <footer>
-        <button type="button" class="outline" data-close-dialog="add-license-dialog">Cancel</button>
-        <button type="submit">Add</button>
+        <button type="button" class="outline" id="license-cancel-btn" data-close-dialog="add-license-dialog">Cancel</button>
+        <button type="submit" id="license-upload-btn">Upload</button>
       </footer>
     </form>
   </article>
@@ -240,7 +240,7 @@
       <button aria-label="Close" rel="prev" data-close-dialog="add-certificate-dialog"></button>
       <h3>Add Training Certificate</h3>
     </header>
-    <form action="/manager/guests/<%= guest.id %>/training-certificate" method="POST" enctype="multipart/form-data">
+    <form id="certificate-upload-form" action="/manager/guests/<%= guest.id %>/training-certificate" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>Issue Date<input type="date" name="issueDate" required /></label>
       <label>
@@ -249,12 +249,29 @@
         <small>One PDF or up to 2 images</small>
       </label>
       <footer>
-        <button type="button" class="outline" data-close-dialog="add-certificate-dialog">Cancel</button>
-        <button type="submit">Add</button>
+        <button type="button" class="outline" id="certificate-cancel-btn" data-close-dialog="add-certificate-dialog">Cancel</button>
+        <button type="submit" id="certificate-upload-btn">Upload</button>
       </footer>
     </form>
   </article>
 </dialog>
+
+<script>
+  (function () {
+    function bindUploadLoading(formId, uploadBtnId, cancelBtnId) {
+      var form = document.getElementById(formId);
+      if (!form) return;
+      form.addEventListener('submit', function () {
+        var btn = document.getElementById(uploadBtnId);
+        var cancel = document.getElementById(cancelBtnId);
+        if (btn) btn.setAttribute('aria-busy', 'true');
+        if (cancel) cancel.disabled = true;
+      });
+    }
+    bindUploadLoading('license-upload-form', 'license-upload-btn', 'license-cancel-btn');
+    bindUploadLoading('certificate-upload-form', 'certificate-upload-btn', 'certificate-cancel-btn');
+  })();
+</script>
 
 <!-- Edit Guest dialog -->
 <dialog id="edit-guest-dialog">

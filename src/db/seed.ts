@@ -43,33 +43,6 @@ async function main() {
   await db.execute(sql`CREATE EXTENSION IF NOT EXISTS postgis`);
   console.log('> PostGIS extension enabled');
 
-  await db.execute(sql`
-    DO $$
-    BEGIN
-      IF EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'areas'
-          AND column_name = 'geofile'
-          AND data_type != 'USER-DEFINED'
-      ) THEN
-        ALTER TABLE areas
-        ALTER COLUMN geofile
-        SET DATA TYPE geometry(GeometryCollection, 4326)
-        USING CASE
-          WHEN geofile IS NOT NULL THEN ST_GeomFromGeoJSON(geofile)
-          ELSE NULL
-        END;
-      END IF;
-    END $$;
-  `);
-  console.log('> areas.geofile checked/migrated to geometry(GeometryCollection, 4326)');
-
-  await db.execute(sql`
-    CREATE INDEX IF NOT EXISTS areas_geofile_gist ON areas USING GIST (geofile)
-  `);
-  console.log('> GIST index created on areas.geofile');
-
-
   try {
     for (const table of [
       schema.driveStandAssignmentsTable,
@@ -101,6 +74,32 @@ async function main() {
     console.error('Error resetting tables:', error);
     process.exit(1);
   }
+
+  await db.execute(sql`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'areas'
+          AND column_name = 'geofile'
+          AND data_type != 'USER-DEFINED'
+      ) THEN
+        ALTER TABLE areas
+        ALTER COLUMN geofile
+        SET DATA TYPE geometry(GeometryCollection, 4326)
+        USING CASE
+          WHEN geofile IS NOT NULL THEN ST_GeomFromGeoJSON(geofile)
+          ELSE NULL
+        END;
+      END IF;
+    END $$;
+  `);
+  console.log('> areas.geofile checked/migrated to geometry(GeometryCollection, 4326)');
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS areas_geofile_gist ON areas USING GIST (geofile)
+  `);
+  console.log('> GIST index created on areas.geofile');
 
   console.log('> seeding started');
   const startTime = Date.now();

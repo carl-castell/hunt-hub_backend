@@ -4,4 +4,4 @@ node_modules
 dist/
 .idea/
 coverage/
-.idea/
+.claudeignore
