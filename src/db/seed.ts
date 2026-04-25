@@ -44,6 +44,9 @@ async function main() {
   console.log('> PostGIS extension enabled');
 
   try {
+    await db.execute(sql.raw(`TRUNCATE TABLE session`));
+    console.log('> truncated session table');
+
     for (const table of [
       schema.driveStandAssignmentsTable,
       schema.driveGroupsTable,
