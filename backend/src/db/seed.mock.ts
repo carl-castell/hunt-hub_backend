@@ -15,8 +15,8 @@ const PAST_EVENTS       = 40;
 const FUTURE_EVENTS     = 10;
 const GUESTS_PER_EVENT  = 80;
 
-const FILLER_BEFORE = { name: 'Filler Estate Alpha', guests: 500000, events: 30,  invitationsPerEvent: 90 };
-const FILLER_AFTER  = { name: 'Filler Estate Beta',  guests: 500000, events: 30, invitationsPerEvent: 90 };
+const FILLER_BEFORE = { name: 'Filler Estate Alpha', guests: 100000, events: 30,  invitationsPerEvent: 90 };
+const FILLER_AFTER  = { name: 'Filler Estate Beta',  guests: 100000, events: 30, invitationsPerEvent: 90 };
 // ─────────────────────────────────────────────────
 
 const CHUNK_SIZE = 500;
