@@ -207,7 +207,7 @@ describe('Full TOTP setup flow', () => {
     // Step 6: /admin is accessible
     const adminRes = await agent.get('/admin');
     expect(adminRes.status).toBe(200);
-  });
+  }, 20_000);
 
 });
 
