@@ -12,7 +12,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['src/tests/**', 'src/db/**', 'src/types/**', 'src/workers/**', 'src/controllers/wfs.ts', 'src/index.ts'],
+      exclude: ['src/tests/**', 'src/db/**', 'src/types/**', 'src/workers/**', 'src/controllers/wfs.ts', 'src/index.ts', 'src/app.ts'],
     },
     projects: [
       {
