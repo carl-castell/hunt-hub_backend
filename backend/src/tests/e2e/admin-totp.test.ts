@@ -407,3 +407,228 @@ describe('Backup codes download', () => {
     expect(res.text).toContain('Hunt-Hub Admin Backup Codes');
   });
 });
+
+// ---------------------------------------------------------------------------
+// requirePending / requireBackupCodes — already logged-in admin is redirected
+// ---------------------------------------------------------------------------
+
+describe('requirePending — already logged-in admin is redirected to /admin', () => {
+  let userId: number;
+  let email: string;
+  const secret = new Secret().base32;
+
+  beforeAll(async () => {
+    ({ userId, email } = await createAdmin('already-authed'));
+    await setTotpSecret(userId, secret);
+  });
+
+  afterAll(async () => {
+    await cleanupAdmin(userId);
+  });
+
+  async function loggedInAgent() {
+    const agent = request.agent(app);
+    await agent.post('/login').send({ email, password: ADMIN_PASSWORD });
+    const token = new TOTP({ secret: Secret.fromBase32(secret) }).generate();
+    await agent.post('/totp').send({ token });
+    return agent;
+  }
+
+  it('GET /totp redirects to /admin', async () => {
+    const agent = await loggedInAgent();
+    const res = await agent.get('/totp');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/admin');
+  });
+
+  it('POST /totp redirects to /admin', async () => {
+    const agent = await loggedInAgent();
+    const res = await agent.post('/totp').send({ token: '000000' });
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/admin');
+  });
+
+  it('GET /totp/setup redirects to /admin', async () => {
+    const agent = await loggedInAgent();
+    const res = await agent.get('/totp/setup');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/admin');
+  });
+
+  it('GET /totp/backup redirects to /admin', async () => {
+    const agent = await loggedInAgent();
+    const res = await agent.get('/totp/backup');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/admin');
+  });
+
+  it('GET /totp/backup-codes redirects to /admin (requireBackupCodes)', async () => {
+    const agent = await loggedInAgent();
+    const res = await agent.get('/totp/backup-codes');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/admin');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GET /totp/setup — reuses the secret already stored in session
+// ---------------------------------------------------------------------------
+
+describe('GET /totp/setup — reuses existing session secret', () => {
+  let userId: number;
+  let email: string;
+
+  beforeAll(async () => {
+    ({ userId, email } = await createAdmin('reuse-secret'));
+  });
+
+  afterAll(async () => {
+    await cleanupAdmin(userId);
+  });
+
+  it('returns the same TOTP secret on a second visit', async () => {
+    const agent = request.agent(app);
+    await agent.post('/login').send({ email, password: ADMIN_PASSWORD });
+
+    const firstPage  = await agent.get('/totp/setup');
+    const firstSecret = extractSecret(firstPage.text);
+
+    const secondPage  = await agent.get('/totp/setup');
+    const secondSecret = extractSecret(secondPage.text);
+
+    expect(firstSecret).not.toBeNull();
+    expect(firstSecret).toBe(secondSecret);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// POST /totp/setup — no pendingTotpSecret in session
+// ---------------------------------------------------------------------------
+
+describe('POST /totp/setup — no secret in session', () => {
+  let userId: number;
+  let email: string;
+
+  beforeAll(async () => {
+    ({ userId, email } = await createAdmin('no-pending-secret'));
+  });
+
+  afterAll(async () => {
+    await cleanupAdmin(userId);
+  });
+
+  it('redirects back to /totp/setup when session has no pending secret', async () => {
+    const agent = request.agent(app);
+    await agent.post('/login').send({ email, password: ADMIN_PASSWORD });
+    // Skip GET /totp/setup — pendingTotpSecret is never written to session
+    const res = await agent.post('/totp/setup').send({ token: '000000' });
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/totp/setup');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// POST /totp/backup — account locking
+// ---------------------------------------------------------------------------
+
+describe('Backup code — account locking', () => {
+  let userId: number;
+  let email: string;
+  const secret = new Secret().base32;
+
+  beforeAll(async () => {
+    ({ userId, email } = await createAdmin('lock-tests'));
+    await setTotpSecret(userId, secret);
+    await insertBackupCode(userId, 'LOCK-CODE-OK');
+  });
+
+  afterAll(async () => {
+    await cleanupAdmin(userId);
+  });
+
+  it('shows "temporarily locked" when lockedUntil is in the future', async () => {
+    const agent = request.agent(app);
+    await agent.post('/login').send({ email, password: ADMIN_PASSWORD });
+
+    // Set lock after login — the login route may check/reset lockedUntil
+    await db.update(accountsTable)
+      .set({ lockedUntil: new Date(Date.now() + 15 * 60 * 1000) })
+      .where(eq(accountsTable.userId, userId));
+
+    const res = await agent.post('/totp/backup').send({ code: 'LOCK-CODE-OK' });
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Account temporarily locked');
+
+    await db.update(accountsTable)
+      .set({ lockedUntil: null, failedAttempts: 0 })
+      .where(eq(accountsTable.userId, userId));
+  });
+
+  it('clears an expired lock and processes the request', async () => {
+    const agent = request.agent(app);
+    await agent.post('/login').send({ email, password: ADMIN_PASSWORD });
+
+    // Set expired lock after login
+    await db.update(accountsTable)
+      .set({ lockedUntil: new Date(Date.now() - 1000), failedAttempts: 5 })
+      .where(eq(accountsTable.userId, userId));
+
+    const res = await agent.post('/totp/backup').send({ code: 'ZZZZ-INVALID' });
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Invalid or already used backup code');
+
+    const [acct] = await db
+      .select({ failedAttempts: accountsTable.failedAttempts, lockedUntil: accountsTable.lockedUntil })
+      .from(accountsTable)
+      .where(eq(accountsTable.userId, userId))
+      .limit(1);
+
+    expect(acct?.lockedUntil).toBeNull();
+    expect(acct?.failedAttempts).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// POST /totp/backup — 10th failure locks the account
+// ---------------------------------------------------------------------------
+
+describe('Backup code — 10th failed attempt triggers lockout', () => {
+  let userId: number;
+  let email: string;
+  const secret = new Secret().base32;
+
+  beforeAll(async () => {
+    ({ userId, email } = await createAdmin('tenth-attempt'));
+    await setTotpSecret(userId, secret);
+  });
+
+  afterAll(async () => {
+    await cleanupAdmin(userId);
+  });
+
+  it('sets lockedUntil on the account after the 10th failure', async () => {
+    const agent = request.agent(app);
+    await agent.post('/login').send({ email, password: ADMIN_PASSWORD });
+
+    // Set failedAttempts after login — login may reset the counter on success
+    await db.update(accountsTable)
+      .set({ failedAttempts: 9 })
+      .where(eq(accountsTable.userId, userId));
+
+    const res = await agent.post('/totp/backup').send({ code: 'FAKE-CODE-XX' });
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Invalid or already used backup code');
+
+    const [acct] = await db
+      .select({ failedAttempts: accountsTable.failedAttempts, lockedUntil: accountsTable.lockedUntil })
+      .from(accountsTable)
+      .where(eq(accountsTable.userId, userId))
+      .limit(1);
+
+    expect(acct?.failedAttempts).toBe(10);
+    expect(acct?.lockedUntil).not.toBeNull();
+  });
+});
